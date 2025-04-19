@@ -12,14 +12,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import ng.wimika.moneyguard_sdk.MoneyGuardSdk
 import ng.wimika.moneyguard_sdk.services.MoneyGuardSdkService
 import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
+import ng.wimika.moneyguardsdkclient.ui.navigation.NavigationHost
 import ng.wimika.moneyguardsdkclient.ui.theme.MoneyGuardSdkClientTheme
 
 class MainActivity : ComponentActivity() {
@@ -40,41 +44,25 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MoneyGuardSdkClientTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(innerPadding),
-                        verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        val appContext = LocalContext.current
-
-                        Button(onClick = {
-                            val isAppInstalled = sdkUtils?.isMoneyGuardInstalled()
-                            Toast.makeText(
-                                appContext,
-                                "MoneyGuard Installed: $isAppInstalled",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }) {
-                            Text("Check MoneyGuard App Installation")
-                        }
-
-                        Button(onClick = {
-                            sdkUtils?.launchAppInstallation()
-                        }) {
-                            Text("Launch MoneyGuard App installation")
-                        }
-
-                        Button(onClick = {
-                            sdkUtils?.launchMoneyGuardApp()
-                        }) {
-                            Text("Launch MoneyGuard App")
-                        }
-                    }
+            CompositionLocalProvider(
+                LocalMoneyGuardUtility provides sdkUtils,
+                LocalMoneyGuardAuthentication provides sdkAuth
+            ) {
+                MoneyGuardSdkClientTheme {
+                    val navigationController = rememberNavController()
+                    NavigationHost(navController = navigationController)
                 }
             }
+
         }
     }
+}
+
+val LocalMoneyGuardUtility = staticCompositionLocalOf<MoneyGuardUtility?> {
+    error("No MoneyGuardUtility provided")
+}
+
+val LocalMoneyGuardAuthentication = staticCompositionLocalOf<MoneyGuardAuthentication?> {
+    error("No MoneyGuardAuthentication provided")
 }
 

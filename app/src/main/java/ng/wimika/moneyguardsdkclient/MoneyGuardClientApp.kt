@@ -1,7 +1,6 @@
 package ng.wimika.moneyguardsdkclient
 
 import android.app.Application
-import ng.wimika.moneyguard_sdk.MoneyGuardSdk
 import ng.wimika.moneyguard_sdk.services.MoneyGuardSdkService
 
 class MoneyGuardClientApp: Application() {
@@ -12,6 +11,6 @@ class MoneyGuardClientApp: Application() {
 
     override fun onCreate() {
         super.onCreate()
-        sdkService = MoneyGuardSdk.initialize(this)
+        //sdkService = MoneyGuardSdk.initialize(this)
     }
 }
