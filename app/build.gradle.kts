@@ -41,7 +41,8 @@ android {
 
 dependencies {
     implementation(files("libs/moneyguard-sdk-release.aar"))
-    implementation(files("libs/moneyguard-sdk-utils-release.aar"))
+    implementation(files("libs/moneyguard-sdk-commons-release.aar"))
+    implementation(files("libs/moneyguard-sdk-auth-release.aar"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

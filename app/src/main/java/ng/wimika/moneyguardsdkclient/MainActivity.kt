@@ -17,9 +17,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import ng.wimika.moneyguard_sdk.MoneyGuardSdk
+import ng.wimika.moneyguard_sdk.services.MoneyGuardSdkService
+import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
+import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
 import ng.wimika.moneyguardsdkclient.ui.theme.MoneyGuardSdkClientTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val sdkService: MoneyGuardSdkService? by lazy {
+        MoneyGuardClientApp.sdkService
+    }
+
+    private val sdkUtils: MoneyGuardUtility? by lazy {
+        sdkService?.utility()
+    }
+
+    private val sdkAuth: MoneyGuardAuthentication? by lazy {
+        sdkService?.authentication()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,7 +50,7 @@ class MainActivity : ComponentActivity() {
                         val appContext = LocalContext.current
 
                         Button(onClick = {
-                            val isAppInstalled = MoneyGuardSdk.isMoneyGuardInstalled()
+                            val isAppInstalled = sdkUtils?.isMoneyGuardInstalled()
                             Toast.makeText(
                                 appContext,
                                 "MoneyGuard Installed: $isAppInstalled",
@@ -45,13 +61,13 @@ class MainActivity : ComponentActivity() {
                         }
 
                         Button(onClick = {
-                            MoneyGuardSdk.installApp()
+                            sdkUtils?.launchAppInstallation()
                         }) {
                             Text("Launch MoneyGuard App installation")
                         }
 
                         Button(onClick = {
-                            MoneyGuardSdk.launchMoneyGuardApp()
+                            sdkUtils?.launchMoneyGuardApp()
                         }) {
                             Text("Launch MoneyGuard App")
                         }
