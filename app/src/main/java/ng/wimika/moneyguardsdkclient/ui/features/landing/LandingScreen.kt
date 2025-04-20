@@ -2,11 +2,15 @@ package ng.wimika.moneyguardsdkclient.ui.features.landing
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -38,6 +42,10 @@ fun LandingScreen(
                 contentDescription = null
             )
 
+            Box(
+                modifier = Modifier.padding(top = 16.dp)
+            )
+
             Column(
                 modifier = Modifier.padding(16.dp).fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -48,11 +56,13 @@ fun LandingScreen(
                     FeatureCategory(
                         modifier = Modifier.weight(1f),
                         title = "Utilities",
+                        icon = Icons.Default.Settings,
                         onClick = { gotoUtilityClick?.invoke() }
                     )
                     FeatureCategory(
                         modifier = Modifier.weight(1f),
                         title = "Login",
+                        icon = Icons.Default.AccountCircle,
                         onClick = { gotoLoginClick?.invoke() }
                     )
                 }
@@ -62,11 +72,13 @@ fun LandingScreen(
                     FeatureCategory(
                         modifier = Modifier.weight(1f),
                         title = "Utilities",
+                        icon = Icons.Default.Settings,
                         onClick = { gotoUtilityClick?.invoke() }
                     )
                     FeatureCategory(
                         modifier = Modifier.weight(1f),
                         title = "Login",
+                        icon = Icons.Default.AccountCircle,
                         onClick = { gotoLoginClick?.invoke() }
                     )
                 }

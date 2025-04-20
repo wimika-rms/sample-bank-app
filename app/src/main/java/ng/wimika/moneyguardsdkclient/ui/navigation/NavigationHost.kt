@@ -7,7 +7,7 @@ import androidx.navigation.compose.composable
 import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
 import ng.wimika.moneyguardsdkclient.ui.features.landing.LandingScreen
 import ng.wimika.moneyguardsdkclient.ui.features.login.Login
-import ng.wimika.moneyguardsdkclient.ui.features.login.LoginScreen
+import ng.wimika.moneyguardsdkclient.ui.features.login.LoginDestination
 import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
 
@@ -30,7 +30,7 @@ fun NavigationHost(navController: NavHostController) {
         }
 
         composable<Login> {
-            LoginScreen()
+            LoginDestination()
         }
 
         composable<Utility> {
