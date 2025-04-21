@@ -2,7 +2,6 @@ package ng.wimika.moneyguardsdkclient.ui.features.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,6 +9,11 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
+import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.SessionResponse
+import ng.wimika.moneyguard_sdk_commons.types.MoneyGuardResult
+import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
+import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepository
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepositoryImpl
 
@@ -17,8 +21,21 @@ class LoginViewModel : ViewModel() {
 
     private val loginRepository: LoginRepository = LoginRepositoryImpl()
 
+    private val moneyGuardAuthentication: MoneyGuardAuthentication? by lazy {
+        MoneyGuardClientApp.sdkService?.authentication()
+    }
+
+    private val preferenceManager: IPreferenceManager? by lazy {
+        MoneyGuardClientApp.preferenceManager
+    }
+
     private val _loginState: MutableStateFlow<LoginState> = MutableStateFlow(LoginState())
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
+
+
+    companion object {
+        private const val WIMIKA_BANK = 101
+    }
 
 
     private fun onEmailChange(email: String) {
@@ -79,5 +96,34 @@ class LoginViewModel : ViewModel() {
         }
     }
 
+
+    private fun getMoneyGuardSession() {
+        viewModelScope.launch {
+            val partnerBankSessionId = loginState.value.sessionId ?: return@launch
+
+            moneyGuardAuthentication
+                ?.register("$WIMIKA_BANK", partnerBankSessionId)
+                ?.collect { result ->
+                    when (result) {
+                        is MoneyGuardResult.Failure -> {
+
+                        }
+
+                        MoneyGuardResult.Loading -> {
+
+                        }
+
+                        is MoneyGuardResult.Success<SessionResponse> -> {
+                            val session = result.data as? SessionResponse
+                            if (session != null) {
+                                preferenceManager?.saveMoneyGuardToken(session.token)
+                            }
+
+                        }
+                    }
+
+                }
+        }
+    }
 
 }
