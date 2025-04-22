@@ -97,7 +97,7 @@ class LoginViewModel : ViewModel() {
                 return@launch
             }
 
-            moneyGuardAuthentication?.register("$WIMIKA_BANK", partnerBankSessionId)
+            moneyGuardAuthentication?.register(WIMIKA_BANK, partnerBankSessionId)
                 ?.catch { error ->
                     _loginState.update { state ->
                         state.copy(isLoading = false, errorMessage = error.message)
