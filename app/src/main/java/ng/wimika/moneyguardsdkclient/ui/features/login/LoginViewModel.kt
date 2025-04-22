@@ -85,43 +85,52 @@ class LoginViewModel : ViewModel() {
                     }
                 }
                 .collect { sessionId ->
-                    _loginState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            errorMessage = null,
-                            sessionId = sessionId
-                        )
-                    }
+                    getMoneyGuardSession(sessionId)
                 }
         }
     }
 
 
-    private fun getMoneyGuardSession() {
+    private fun getMoneyGuardSession(partnerBankSessionId: String) {
         viewModelScope.launch {
-            val partnerBankSessionId = loginState.value.sessionId ?: return@launch
+            if (moneyGuardAuthentication == null) {
+                return@launch
+            }
 
-            moneyGuardAuthentication
-                ?.register("$WIMIKA_BANK", partnerBankSessionId)
+            moneyGuardAuthentication?.register("$WIMIKA_BANK", partnerBankSessionId)
+                ?.catch { error ->
+                    _loginState.update { state ->
+                        state.copy(isLoading = false, errorMessage = error.message)
+                    }
+                }
                 ?.collect { result ->
                     when (result) {
                         is MoneyGuardResult.Failure -> {
-
+                            _loginState.update { state ->
+                                state.copy(isLoading = false, errorMessage = result.error.message)
+                            }
                         }
 
-                        MoneyGuardResult.Loading -> {
-
-                        }
+                        MoneyGuardResult.Loading -> {}
 
                         is MoneyGuardResult.Success<SessionResponse> -> {
                             val session = result.data as? SessionResponse
+
+                            _loginState.update { state ->
+                                state.copy(
+                                    isLoading = false,
+                                    errorMessage = null,
+                                    sessionId = session?.token
+                                )
+                            }
+
+
                             if (session != null) {
                                 preferenceManager?.saveMoneyGuardToken(session.token)
                             }
 
                         }
                     }
-
                 }
         }
     }
