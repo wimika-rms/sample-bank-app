@@ -76,7 +76,7 @@ class LoginViewModel : ViewModel() {
             loginRepository.login(email, password)
                 .onStart {
                     _loginState.update { state ->
-                        state.copy(isLoading = true)
+                        state.copy(isLoading = true, errorMessage = null)
                     }
                 }
                 .catch {

@@ -116,6 +116,14 @@ fun LoginScreen(
                         Text("Login")
                     }
                 }
+
+
+                if (loginState.errorMessage != null) {
+                    Text(
+                        text = loginState.errorMessage,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
