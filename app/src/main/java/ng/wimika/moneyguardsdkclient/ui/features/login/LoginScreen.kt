@@ -117,6 +117,11 @@ fun LoginScreen(
                     }
                 }
 
+                if (loginState.sessionId != null) {
+                    Text("Logged in: ${loginState.sessionId}",
+                        color = Color.DarkGray
+                    )
+                }
 
                 if (loginState.errorMessage != null) {
                     Text(

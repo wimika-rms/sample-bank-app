@@ -15,7 +15,7 @@ object NetworkUtils {
         }
 
         val okHttpClient = OkHttpClient.Builder()
-            .addNetworkInterceptor(loggingInterceptor)
+            .addInterceptor(loggingInterceptor)
             .build()
 
         return Retrofit.Builder()

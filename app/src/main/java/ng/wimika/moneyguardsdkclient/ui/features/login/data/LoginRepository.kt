@@ -15,14 +15,14 @@ interface LoginRepository {
 class LoginRepositoryImpl: LoginRepository {
 
     private val apiService: MoneyGuardClientApiService by lazy {
-        NetworkUtils.getRetrofitClient("https://bankservice.azurewebsites.net")
+        NetworkUtils.getRetrofitClient("https://moneyguardservice.azurewebsites.net")
             .create(MoneyGuardClientApiService::class.java)
     }
 
     override suspend fun login(email: String, password: String): Flow<String> = flow {
         val request = ClientLoginRequest(email, password)
         val response = apiService.login(request)
-        emit(response.sessionId)
+        emit(response.data?.sessionId ?: "")
     }
 
 }

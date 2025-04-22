@@ -7,7 +7,7 @@ import retrofit2.http.POST
 
 interface MoneyGuardClientApiService {
 
-    @POST("/auth/emails/signin")
+    @POST("api/v1/account/auth/emails/signin")
     suspend fun login(
         @Body loginRequest: ClientLoginRequest
     ): ClientSessionResponse
