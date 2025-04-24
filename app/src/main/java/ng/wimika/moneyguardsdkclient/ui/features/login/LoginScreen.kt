@@ -118,7 +118,7 @@ fun LoginScreen(
                 }
 
                 if (loginState.sessionId != null) {
-                    Text("Logged in: ${loginState.sessionId}",
+                    Text("Logged in: Successful",
                         color = Color.DarkGray
                     )
                 }
