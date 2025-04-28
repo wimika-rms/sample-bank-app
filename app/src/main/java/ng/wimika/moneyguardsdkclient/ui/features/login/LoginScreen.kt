@@ -1,5 +1,6 @@
 package ng.wimika.moneyguardsdkclient.ui.features.login
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -45,9 +47,20 @@ fun LoginDestination(
     onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.loginState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        viewModel.setOnLoginSuccess(onLoginSuccess)
+        viewModel.loginResultEvent.collect { event ->
+            when(event) {
+                is LoginResultEvent.CredentialCheckSuccessful -> {
+                    Toast.makeText(context, event.result.name, Toast.LENGTH_LONG).show()
+                }
+
+                LoginResultEvent.LoginSuccessful -> {
+                    onLoginSuccess()
+                }
+            }
+        }
     }
 
     LoginScreen(

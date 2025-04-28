@@ -69,5 +69,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.okhttp3.logging)
     implementation(libs.gson.converter)
+    implementation(libs.android.joda)
 
 }

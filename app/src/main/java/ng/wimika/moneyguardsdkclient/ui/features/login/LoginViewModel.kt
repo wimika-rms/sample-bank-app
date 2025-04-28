@@ -2,8 +2,15 @@ package ng.wimika.moneyguardsdkclient.ui.features.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
@@ -11,11 +18,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
 import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.SessionResponse
+import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.Credential
+import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.CredentialScanResult
+import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.HashAlgorithm
 import ng.wimika.moneyguard_sdk_commons.types.MoneyGuardResult
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepository
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepositoryImpl
+import ng.wimika.moneyguardsdkclient.utils.computeHash
 
 class LoginViewModel : ViewModel() {
 
@@ -32,11 +43,10 @@ class LoginViewModel : ViewModel() {
     private val _loginState: MutableStateFlow<LoginState> = MutableStateFlow(LoginState())
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
-    private var onLoginSuccess: (() -> Unit)? = null
+    private val _loginResultEvent: MutableSharedFlow<LoginResultEvent> = MutableSharedFlow()
+    val loginResultEvent: SharedFlow<LoginResultEvent> = _loginResultEvent.asSharedFlow()
 
-    fun setOnLoginSuccess(callback: () -> Unit) {
-        onLoginSuccess = callback
-    }
+    private var onLoginSuccess: (() -> Unit)? = null
 
     companion object {
         private const val WIMIKA_BANK = 101
@@ -45,6 +55,7 @@ class LoginViewModel : ViewModel() {
 
     fun logOut() {
         viewModelScope.launch {
+            moneyGuardAuthentication?.logout()
             preferenceManager?.clear()
         }
     }
@@ -137,7 +148,22 @@ class LoginViewModel : ViewModel() {
 
                             if (session != null) {
                                 preferenceManager?.saveMoneyGuardToken(session.token)
-                                onLoginSuccess?.invoke()
+
+                                try {
+                                    val scanResult = performCredentialChecks(
+                                        session.token,
+                                        loginState.value.email,
+                                        loginState.value.password
+                                    )
+
+                                    _loginResultEvent.emit(LoginResultEvent.CredentialCheckSuccessful(scanResult.status))
+
+                                    delay(1000)
+
+                                    _loginResultEvent.emit(LoginResultEvent.LoginSuccessful)
+                                    onLoginSuccess?.invoke()
+                                }catch (e: Error) { }
+
                             }
                         }
                     }
@@ -145,4 +171,35 @@ class LoginViewModel : ViewModel() {
         }
     }
 
+
+    private suspend fun performCredentialChecks(
+        sessionToken: String,
+        username: String,
+        password: String
+    ) = suspendCoroutine<CredentialScanResult> { coroutine ->
+        val credential = Credential(
+            username = username,
+            passwordStartingCharactersHash = password.computeHash(),
+            domain = "wimika.ng",
+            hashAlgorithm = HashAlgorithm.SHA256,
+        )
+
+        moneyGuardAuthentication?.credentialCheck(sessionToken, credential,
+            onResult = { result ->
+                when(result) {
+                    is MoneyGuardResult.Failure -> {
+                        coroutine.resumeWithException(result.error)
+                    }
+                    MoneyGuardResult.Loading -> {
+
+                    }
+                    is MoneyGuardResult.Success<CredentialScanResult> -> {
+                        coroutine.resume(result.data)
+                    }
+                }
+            }
+        ) ?: run {
+            coroutine.resumeWithException(IllegalStateException("MoneyGuard authentication service is not available"))
+        }
+    }
 }
