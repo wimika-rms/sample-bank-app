@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -21,16 +20,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 import ng.wimika.moneyguardsdkclient.R
-
+import ng.wimika.moneyguardsdkclient.ui.features.landing.FeatureCategory
 
 @Serializable
 object Landing
 
-
 @Composable
 fun LandingScreen(
-    gotoLoginClick: (() -> Unit)? = null,
-    gotoUtilityClick: (() -> Unit)? = null
+    gotoLoginClick: (() -> Unit)? = null
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -55,28 +52,6 @@ fun LandingScreen(
                 ) {
                     FeatureCategory(
                         modifier = Modifier.weight(1f),
-                        title = "Utilities",
-                        icon = Icons.Default.Settings,
-                        onClick = { gotoUtilityClick?.invoke() }
-                    )
-                    FeatureCategory(
-                        modifier = Modifier.weight(1f),
-                        title = "Login",
-                        icon = Icons.Default.AccountCircle,
-                        onClick = { gotoLoginClick?.invoke() }
-                    )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    FeatureCategory(
-                        modifier = Modifier.weight(1f),
-                        title = "Utilities",
-                        icon = Icons.Default.Settings,
-                        onClick = { gotoUtilityClick?.invoke() }
-                    )
-                    FeatureCategory(
-                        modifier = Modifier.weight(1f),
                         title = "Login",
                         icon = Icons.Default.AccountCircle,
                         onClick = { gotoLoginClick?.invoke() }
@@ -86,7 +61,6 @@ fun LandingScreen(
         }
     }
 }
-
 
 @Preview
 @Composable

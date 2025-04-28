@@ -32,6 +32,11 @@ class LoginViewModel : ViewModel() {
     private val _loginState: MutableStateFlow<LoginState> = MutableStateFlow(LoginState())
     val loginState: StateFlow<LoginState> = _loginState.asStateFlow()
 
+    private var onLoginSuccess: (() -> Unit)? = null
+
+    fun setOnLoginSuccess(callback: () -> Unit) {
+        onLoginSuccess = callback
+    }
 
     companion object {
         private const val WIMIKA_BANK = 101
@@ -124,11 +129,10 @@ class LoginViewModel : ViewModel() {
                                 )
                             }
 
-
                             if (session != null) {
                                 preferenceManager?.saveMoneyGuardToken(session.token)
+                                onLoginSuccess?.invoke()
                             }
-
                         }
                     }
                 }

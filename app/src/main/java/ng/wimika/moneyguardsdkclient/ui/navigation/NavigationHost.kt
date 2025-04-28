@@ -4,13 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ng.wimika.moneyguardsdkclient.ui.features.dashboard.Dashboard
+import ng.wimika.moneyguardsdkclient.ui.features.dashboard.DashboardScreen
 import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
 import ng.wimika.moneyguardsdkclient.ui.features.landing.LandingScreen
 import ng.wimika.moneyguardsdkclient.ui.features.login.Login
 import ng.wimika.moneyguardsdkclient.ui.features.login.LoginDestination
 import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
-
 
 @Composable
 fun NavigationHost(navController: NavHostController) {
@@ -20,9 +21,6 @@ fun NavigationHost(navController: NavHostController) {
     ) {
         composable<Landing> {
             LandingScreen(
-                gotoUtilityClick = {
-                    navController.navigate(Utility)
-                },
                 gotoLoginClick = {
                     navController.navigate(Login)
                 }
@@ -30,7 +28,26 @@ fun NavigationHost(navController: NavHostController) {
         }
 
         composable<Login> {
-            LoginDestination()
+            LoginDestination(
+                onLoginSuccess = {
+                    navController.navigate(Dashboard) {
+                        popUpTo(Landing) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable<Dashboard> {
+            DashboardScreen(
+                onUtilitiesClick = {
+                    navController.navigate(Utility)
+                },
+                onLogout = {
+                    navController.navigate(Landing) {
+                        popUpTo(Dashboard) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable<Utility> {

@@ -15,6 +15,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,9 +41,14 @@ sealed class LoginEvent {
 
 @Composable
 fun LoginDestination(
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = viewModel(),
+    onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.loginState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.setOnLoginSuccess(onLoginSuccess)
+    }
 
     LoginScreen(
         loginState = state,
@@ -55,7 +61,7 @@ fun LoginDestination(
 @Composable
 fun LoginScreen(
     loginState: LoginState,
-    onEvent: (LoginEvent) -> Unit,
+    onEvent: (LoginEvent) -> Unit
 ) {
     Surface(
         modifier = Modifier
