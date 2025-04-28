@@ -23,6 +23,7 @@ import ng.wimika.moneyguard_sdk.MoneyGuardSdk
 import ng.wimika.moneyguard_sdk.services.MoneyGuardSdkService
 import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
+import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
 import ng.wimika.moneyguardsdkclient.ui.navigation.NavigationHost
 import ng.wimika.moneyguardsdkclient.ui.theme.MoneyGuardSdkClientTheme
 
@@ -40,9 +41,15 @@ class MainActivity : ComponentActivity() {
         sdkService?.authentication()
     }
 
+    private val preferenceManager: IPreferenceManager? by lazy {
+        MoneyGuardClientApp.preferenceManager
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val isLoggedIn = preferenceManager?.getMoneyGuardToken()?.isNotEmpty() == true
+
         setContent {
             CompositionLocalProvider(
                 LocalMoneyGuardUtility provides sdkUtils,
@@ -50,7 +57,10 @@ class MainActivity : ComponentActivity() {
             ) {
                 MoneyGuardSdkClientTheme {
                     val navigationController = rememberNavController()
-                    NavigationHost(navController = navigationController)
+                    NavigationHost(
+                        navController = navigationController,
+                        isLoggedIn = isLoggedIn
+                    )
                 }
             }
 

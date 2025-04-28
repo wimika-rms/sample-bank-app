@@ -20,13 +20,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
 import ng.wimika.moneyguardsdkclient.LocalMoneyGuardUtility
 import ng.wimika.moneyguardsdkclient.ui.features.landing.FeatureCategory
+import ng.wimika.moneyguardsdkclient.ui.features.login.LoginViewModel
 
 @Serializable
 object Dashboard
+
+
+@Composable
+fun DashboardDestination(
+    viewModel: LoginViewModel = viewModel(),
+    onUtilitiesClick: () -> Unit,
+    onLogout: () -> Unit
+) {
+
+    DashboardScreen(
+        onUtilitiesClick = onUtilitiesClick,
+        onLogout = {
+            viewModel.logOut()
+            onLogout()
+        }
+    )
+}
 
 @Composable
 fun DashboardScreen(
@@ -52,7 +71,7 @@ fun DashboardScreen(
                     text = "Dashboard",
                     style = MaterialTheme.typography.headlineMedium
                 )
-                
+
                 Button(
                     onClick = onLogout,
                     contentPadding = PaddingValues(8.dp)

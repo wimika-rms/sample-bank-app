@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.Dashboard
+import ng.wimika.moneyguardsdkclient.ui.features.dashboard.DashboardDestination
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.DashboardScreen
 import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
 import ng.wimika.moneyguardsdkclient.ui.features.landing.LandingScreen
@@ -14,10 +15,14 @@ import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
 
 @Composable
-fun NavigationHost(navController: NavHostController) {
+fun NavigationHost(
+    navController: NavHostController,
+    isLoggedIn: Boolean = false,
+) {
+
     NavHost(
         navController = navController,
-        startDestination = Landing
+        startDestination = if (isLoggedIn) Dashboard else Landing
     ) {
         composable<Landing> {
             LandingScreen(
@@ -38,7 +43,7 @@ fun NavigationHost(navController: NavHostController) {
         }
 
         composable<Dashboard> {
-            DashboardScreen(
+            DashboardDestination(
                 onUtilitiesClick = {
                     navController.navigate(Utility)
                 },

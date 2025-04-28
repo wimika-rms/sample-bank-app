@@ -43,6 +43,12 @@ class LoginViewModel : ViewModel() {
     }
 
 
+    fun logOut() {
+        viewModelScope.launch {
+            preferenceManager?.clear()
+        }
+    }
+
     private fun onEmailChange(email: String) {
         _loginState.update { currentState ->
             currentState.copy(email = email)
