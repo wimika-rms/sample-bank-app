@@ -11,6 +11,8 @@ import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
 import ng.wimika.moneyguardsdkclient.ui.features.landing.LandingScreen
 import ng.wimika.moneyguardsdkclient.ui.features.login.Login
 import ng.wimika.moneyguardsdkclient.ui.features.login.LoginDestination
+import ng.wimika.moneyguardsdkclient.ui.features.startriskchecks.StartupRiskDestination
+import ng.wimika.moneyguardsdkclient.ui.features.startriskchecks.StartupRiskScreen
 import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
 
@@ -19,11 +21,27 @@ fun NavigationHost(
     navController: NavHostController,
     isLoggedIn: Boolean = false,
 ) {
-
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) Dashboard else Landing
+        startDestination = StartupRiskScreen
     ) {
+
+        composable<StartupRiskScreen> {
+            StartupRiskDestination(
+                launchMainScreen =  {
+                    if (isLoggedIn) {
+                        navController.navigate(Dashboard) {
+                            popUpTo(Landing) { inclusive = true }
+                        }
+                        return@StartupRiskDestination
+                    }
+
+                    navController.navigate(Landing)
+                }
+            )
+        }
+
+
         composable<Landing> {
             LandingScreen(
                 gotoLoginClick = {
