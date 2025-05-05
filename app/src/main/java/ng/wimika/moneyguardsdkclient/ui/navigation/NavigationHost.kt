@@ -23,7 +23,7 @@ fun NavigationHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = StartupRiskScreen
+        startDestination = if (isLoggedIn) StartupRiskScreen else Landing
     ) {
 
         composable<StartupRiskScreen> {
@@ -53,7 +53,7 @@ fun NavigationHost(
         composable<Login> {
             LoginDestination(
                 onLoginSuccess = {
-                    navController.navigate(Dashboard) {
+                    navController.navigate(StartupRiskScreen) {
                         popUpTo(Landing) { inclusive = true }
                     }
                 }
