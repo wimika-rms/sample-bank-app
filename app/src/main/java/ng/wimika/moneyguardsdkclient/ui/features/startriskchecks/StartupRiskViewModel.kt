@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.wimika.moneyguard_sdk.services.prelaunch.MoneyGuardPrelaunch
-import ng.wimika.moneyguard_sdk.services.prelaunch.PreLaunchDecision
+import ng.wimika.moneyguard_sdk.services.prelaunch.types.PreLaunchDecision
 import ng.wimika.moneyguard_sdk_commons.types.RiskStatus
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 
