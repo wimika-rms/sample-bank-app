@@ -26,7 +26,7 @@ import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepository
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepositoryImpl
-import ng.wimika.moneyguardsdkclient.utils.computeHash
+import ng.wimika.moneyguardsdkclient.utils.computeSha256Hash
 
 class LoginViewModel : ViewModel() {
 
@@ -179,7 +179,7 @@ class LoginViewModel : ViewModel() {
     ) = suspendCoroutine<CredentialScanResult> { coroutine ->
         val credential = Credential(
             username = username,
-            passwordStartingCharactersHash = password.computeHash(),
+            passwordStartingCharactersHash = password.substring(password.length -3).computeSha256Hash(),
             domain = "wimika.ng",
             hashAlgorithm = HashAlgorithm.SHA256,
         )

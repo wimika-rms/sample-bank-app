@@ -53,7 +53,7 @@ fun LoginDestination(
         viewModel.loginResultEvent.collect { event ->
             when(event) {
                 is LoginResultEvent.CredentialCheckSuccessful -> {
-                    Toast.makeText(context, event.result.name, Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Credential check: " + event.result.name, Toast.LENGTH_LONG).show()
                 }
 
                 LoginResultEvent.LoginSuccessful -> {
