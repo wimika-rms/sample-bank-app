@@ -81,16 +81,13 @@ private fun CheckDebitTransactionScreen(
             )
 
             OutlinedTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                value = state.sourceAccountNumber,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                value = state.amount.toString(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 onValueChange = { amount ->
                     if (amount.isNotEmpty() && amount.toDoubleOrNull() != null) {
                         onEvent(CheckDebitTransactionEvent.UpdateAmount(amount.toDouble()))
                     }
-
                 },
                 label = { Text("Amount") },
             )
