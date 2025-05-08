@@ -14,6 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
+//import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -48,6 +52,8 @@ object Dashboard
 fun DashboardDestination(
     viewModel: LoginViewModel = viewModel(),
     onUtilitiesClick: () -> Unit,
+    onLogout: () -> Unit,
+    onEnableMoneyGuard: () -> Unit
     onDebitCheckClick: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -57,13 +63,16 @@ fun DashboardDestination(
         onLogout = {
             viewModel.logOut()
             onLogout()
-        }
+        },
+        onEnableMoneyGuard = onEnableMoneyGuard
     )
 }
 
 @Composable
 fun DashboardScreen(
     onUtilitiesClick: () -> Unit,
+    onLogout: () -> Unit,
+    onEnableMoneyGuard: () -> Unit
     onDebitCheckClick: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -114,6 +123,16 @@ fun DashboardScreen(
                 }
             }
 
+            FeatureCategory(
+                title = "Enable MoneyGuard",
+                icon = Icons.Default.Add,
+                onClick = onEnableMoneyGuard
+            )
+
+            FeatureCategory(
+                title = "Utilities",
+                icon = Icons.Default.Settings,
+                onClick = onUtilitiesClick
             AccountDetailsCard()
 
             Box(modifier = Modifier.height(16.dp))

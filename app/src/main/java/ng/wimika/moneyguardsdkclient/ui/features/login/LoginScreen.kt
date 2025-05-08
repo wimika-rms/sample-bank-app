@@ -56,7 +56,7 @@ fun LoginDestination(
                     Toast.makeText(context, "Credential check: " + event.result.name, Toast.LENGTH_LONG).show()
                 }
 
-                LoginResultEvent.LoginSuccessful -> {
+                is LoginResultEvent.LoginSuccessful -> {
                     onLoginSuccess()
                 }
             }
