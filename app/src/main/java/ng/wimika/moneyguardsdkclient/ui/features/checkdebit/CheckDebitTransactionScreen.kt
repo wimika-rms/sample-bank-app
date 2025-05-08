@@ -19,6 +19,11 @@ import kotlinx.serialization.Serializable
 import androidx.compose.runtime.getValue
 import android.content.Context
 import android.location.LocationManager
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Scaffold
 import androidx.compose.ui.platform.LocalContext
 
 
@@ -59,63 +64,85 @@ private fun CheckDebitTransactionScreen(
     state: CheckDebitTransactionState,
     onEvent: (CheckDebitTransactionEvent) -> Unit
 ) {
-    androidx.compose.foundation.layout.Column(
-        modifier = Modifier.fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Check Debit Transaction",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
 
-        OutlinedTextField(
+    Scaffold (modifier = Modifier.fillMaxSize()){ innerPadding ->
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            value = state.sourceAccountNumber,
-            onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateSourceAccountNumber(it)) },
-            label = { Text("Source Account Number") },
-        )
-
-        OutlinedTextField(
-            value = state.destinationAccountNumber,
-            onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateDestinationAccountNumber(it)) },
-            label = { Text(text = "Destination Account Number") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-
-        OutlinedTextField(
-            value = state.destinationBank,
-            onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateDestinationBank(it)) },
-            label = { Text("Destination Bank") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp)
-        )
-
-        OutlinedTextField(
-            value = state.memo,
-            onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateMemo(it)) },
-            label = { Text("Memo") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            minLines = 3
-        )
-
-        Button(
-            onClick = { onEvent(CheckDebitTransactionEvent.CheckDebitClick) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
+                .padding(16.dp)
         ) {
-            Text("Check Debit")
+            Text(
+                text = "Check Debit Transaction",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            OutlinedTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                value = state.sourceAccountNumber,
+                onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateSourceAccountNumber(it)) },
+                label = { Text("Source Account Number") },
+            )
+
+            OutlinedTextField(
+                value = state.destinationAccountNumber,
+                onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateDestinationAccountNumber(it)) },
+                label = { Text(text = "Destination Account Number") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            )
+
+            OutlinedTextField(
+                value = state.destinationBank,
+                onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateDestinationBank(it)) },
+                label = { Text("Destination Bank") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+            )
+
+            OutlinedTextField(
+                value = state.memo,
+                onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateMemo(it)) },
+                label = { Text("Memo") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                minLines = 3
+            )
+
+            Button(
+                enabled = state.enableButton,
+                onClick = { onEvent(CheckDebitTransactionEvent.CheckDebitClick) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(top = 16.dp)
+            ) {
+
+                if (state.isLoading) {
+                    CircularProgressIndicator()
+                }
+
+                if (!state.isLoading) {
+                    Text("Check Debit Transaction")
+                }
+            }
+
+
+            Box(modifier = Modifier.padding(top = 16.dp))
+
+            Text("Current Location")
+            Text(
+                text = "Longitude: ${state.geoLocation.lon}, Latitude: ${state.geoLocation.lat}"
+            )
         }
     }
+
 }
 
 
