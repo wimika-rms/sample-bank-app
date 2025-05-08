@@ -1,10 +1,14 @@
 package ng.wimika.moneyguardsdkclient.ui.features.checkdebit
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Bundle
+import android.os.Looper
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -18,6 +22,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.models.GeoLocation
+import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
 
 class CheckDebitTransactionViewModelFactory(
     private val context: Context,
@@ -50,35 +55,36 @@ class CheckDebitTransactionViewModel(
             CheckDebitTransactionState()
         )
 
+    private val locationListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            _checkDebitState.update { currentState ->
+                currentState.copy(
+                    geoLocation = GeoLocation(
+                        lat = location.latitude,
+                        lon = location.longitude,
+                        accuracy = location.accuracy
+                    ),
+                )
+            }
+            // Remove location updates after getting the first location
+            locationManager.removeUpdates(this)
+        }
 
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+        override fun onProviderEnabled(provider: String) {}
+        override fun onProviderDisabled(provider: String) {}
+    }
 
+    @SuppressLint("MissingPermission")
     private fun getCurrentLocation() {
         viewModelScope.launch {
-            _checkDebitState.update { currentState ->
-                currentState.copy(isLoading = true)
-            }
-
             try {
-                if (ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_FINE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    ) == PackageManager.PERMISSION_GRANTED
+                if (PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                    && PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_COARSE_LOCATION)
                 ) {
-                    var location: Location? =
-                        locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-
-                    if (location == null) {
-                        location =
-                            locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
-                    }
-
-                    if (location == null) {
-                        location =
-                            locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                    }
+                    var location: Location? = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                        ?: locationManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
+                        ?: locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
 
                     if (location != null) {
                         _checkDebitState.update { currentState ->
@@ -86,20 +92,39 @@ class CheckDebitTransactionViewModel(
                                 geoLocation = GeoLocation(
                                     lat = location.latitude,
                                     lon = location.longitude,
-                                    accuracy = location.accuracy.toDouble()
-                                )
+                                    accuracy = location.accuracy
+                                ),
+                            )
+                        }
+                    } else {
+                        // If no last known location, request location updates
+                        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                            locationManager.requestLocationUpdates(
+                                LocationManager.GPS_PROVIDER,
+                                0L,
+                                0f,
+                                locationListener,
+                                Looper.getMainLooper()
+                            )
+                        } else if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                            locationManager.requestLocationUpdates(
+                                LocationManager.NETWORK_PROVIDER,
+                                0L,
+                                0f,
+                                locationListener,
+                                Looper.getMainLooper()
                             )
                         }
                     }
                 }
-
             } catch (e: Exception) {
                 e.printStackTrace()
+                _checkDebitState.update { currentState ->
+                    currentState.copy(isLoading = false)
+                }
             }
         }
     }
-
-
 
     fun onEvent(event: CheckDebitTransactionEvent) {
         when (event) {
@@ -138,6 +163,20 @@ class CheckDebitTransactionViewModel(
                     currentState.copy(memo = event.value)
                 }
             }
+        }
+
+        shouldEnableButton()
+    }
+
+    private fun shouldEnableButton() {
+        val currentState = _checkDebitState.value
+        val shouldEnableButton = currentState.sourceAccountNumber.isNotEmpty() &&
+                currentState.destinationAccountNumber.isNotEmpty() &&
+                currentState.destinationBank.isNotEmpty() &&
+                currentState.memo.isNotEmpty() && !currentState.isLoading
+
+        _checkDebitState.update { currentState ->
+            currentState.copy(enableButton = shouldEnableButton)
         }
     }
 }
