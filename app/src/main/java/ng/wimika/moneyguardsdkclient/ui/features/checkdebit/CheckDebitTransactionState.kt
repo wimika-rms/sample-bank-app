@@ -10,4 +10,5 @@ data class CheckDebitTransactionState(
     val destinationAccountNumber: String = "",
     val destinationBank: String = "",
     val memo: String = "",
+    val amount: Double = 0.0
 )

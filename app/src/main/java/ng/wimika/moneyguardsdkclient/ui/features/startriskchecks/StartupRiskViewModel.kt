@@ -43,7 +43,7 @@ class StartupRiskViewModel: ViewModel() {
             }
 
             if (startupRisk != null && startupRisk.moneyGuardActive) {
-                val issues = startupRisk.risks.filter { risk -> risk.status != RiskStatus.SAFE }
+                val issues = startupRisk.risks.filter { risk -> risk.status != RiskStatus.RISK_STATUS_SAFE }
 
                 when(startupRisk.preLaunchVerdict.decision) {
                     PreLaunchDecision.Launch -> {
