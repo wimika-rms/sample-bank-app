@@ -11,21 +11,29 @@ import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
 import ng.wimika.moneyguardsdkclient.ui.features.landing.LandingScreen
 import ng.wimika.moneyguardsdkclient.ui.features.login.Login
 import ng.wimika.moneyguardsdkclient.ui.features.login.LoginDestination
+import ng.wimika.moneyguardsdkclient.ui.features.moneyguard.MoneyGuard
+import ng.wimika.moneyguardsdkclient.ui.features.moneyguard.MoneyGuardNavigation
 import ng.wimika.moneyguardsdkclient.ui.features.startriskchecks.StartupRiskDestination
 import ng.wimika.moneyguardsdkclient.ui.features.startriskchecks.StartupRiskScreen
 import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
+import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
 
 @Composable
 fun NavigationHost(
     navController: NavHostController,
     isLoggedIn: Boolean = false,
+    moneyGuardPolicy: MoneyGuardPolicy,
+    token: String
 ) {
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) StartupRiskScreen else Landing
+        // Comment out prelaunch checks for now
+        // startDestination = if (isLoggedIn) StartupRiskScreen else Landing
+        startDestination = if (isLoggedIn) Dashboard else Landing
     ) {
-
+        // Comment out prelaunch checks for now
+        /*
         composable<StartupRiskScreen> {
             StartupRiskDestination(
                 launchMainScreen =  {
@@ -40,7 +48,7 @@ fun NavigationHost(
                 }
             )
         }
-
+        */
 
         composable<Landing> {
             LandingScreen(
@@ -53,7 +61,8 @@ fun NavigationHost(
         composable<Login> {
             LoginDestination(
                 onLoginSuccess = {
-                    navController.navigate(StartupRiskScreen) {
+                    // Navigate directly to dashboard after login
+                    navController.navigate(Dashboard) {
                         popUpTo(Landing) { inclusive = true }
                     }
                 }
@@ -69,12 +78,25 @@ fun NavigationHost(
                     navController.navigate(Landing) {
                         popUpTo(Dashboard) { inclusive = true }
                     }
+                },
+                onEnableMoneyGuard = {
+                    navController.navigate(MoneyGuard)
                 }
             )
         }
 
         composable<Utility> {
             UtilityScreen()
+        }
+
+        composable<MoneyGuard> {
+            MoneyGuardNavigation(
+                moneyGuardPolicy = moneyGuardPolicy,
+                token = token,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

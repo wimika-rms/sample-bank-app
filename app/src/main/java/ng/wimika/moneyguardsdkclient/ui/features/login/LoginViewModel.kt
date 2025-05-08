@@ -21,6 +21,7 @@ import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.SessionRespo
 import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.Credential
 import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.CredentialScanResult
 import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.HashAlgorithm
+import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.RiskStatus
 import ng.wimika.moneyguard_sdk_commons.types.MoneyGuardResult
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
@@ -160,7 +161,7 @@ class LoginViewModel : ViewModel() {
 
                                     delay(1000)
 
-                                    _loginResultEvent.emit(LoginResultEvent.LoginSuccessful)
+                                    _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
                                     onLoginSuccess?.invoke()
                                 }catch (e: Error) { }
 

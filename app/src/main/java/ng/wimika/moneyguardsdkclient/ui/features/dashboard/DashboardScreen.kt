@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Settings
+//import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,27 +32,28 @@ import ng.wimika.moneyguardsdkclient.ui.features.login.LoginViewModel
 @Serializable
 object Dashboard
 
-
 @Composable
 fun DashboardDestination(
     viewModel: LoginViewModel = viewModel(),
     onUtilitiesClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onEnableMoneyGuard: () -> Unit
 ) {
-
     DashboardScreen(
         onUtilitiesClick = onUtilitiesClick,
         onLogout = {
             viewModel.logOut()
             onLogout()
-        }
+        },
+        onEnableMoneyGuard = onEnableMoneyGuard
     )
 }
 
 @Composable
 fun DashboardScreen(
     onUtilitiesClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onEnableMoneyGuard: () -> Unit
 ) {
     val sdkUtils: MoneyGuardUtility? = LocalMoneyGuardUtility.current
 
@@ -82,6 +85,12 @@ fun DashboardScreen(
                     )
                 }
             }
+
+            FeatureCategory(
+                title = "Enable MoneyGuard",
+                icon = Icons.Default.Add,
+                onClick = onEnableMoneyGuard
+            )
 
             FeatureCategory(
                 title = "Utilities",
