@@ -22,9 +22,11 @@ import android.location.LocationManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 
 
 @Serializable
@@ -32,13 +34,13 @@ object CheckDebitTransaction
 
 
 sealed class CheckDebitTransactionEvent {
-    object CheckDebitClick: CheckDebitTransactionEvent()
-    data class UpdateSourceAccountNumber(val value: String): CheckDebitTransactionEvent()
-    data class UpdateDestinationAccountNumber(val value: String): CheckDebitTransactionEvent()
-    data class UpdateDestinationBank(val value: String): CheckDebitTransactionEvent()
-    data class UpdateMemo(val value: String): CheckDebitTransactionEvent()
+    object CheckDebitClick : CheckDebitTransactionEvent()
+    data class UpdateAmount(val value: Double) : CheckDebitTransactionEvent()
+    data class UpdateSourceAccountNumber(val value: String) : CheckDebitTransactionEvent()
+    data class UpdateDestinationAccountNumber(val value: String) : CheckDebitTransactionEvent()
+    data class UpdateDestinationBank(val value: String) : CheckDebitTransactionEvent()
+    data class UpdateMemo(val value: String) : CheckDebitTransactionEvent()
 }
-
 
 
 @Composable
@@ -65,7 +67,7 @@ private fun CheckDebitTransactionScreen(
     onEvent: (CheckDebitTransactionEvent) -> Unit
 ) {
 
-    Scaffold (modifier = Modifier.fillMaxSize()){ innerPadding ->
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
@@ -83,13 +85,35 @@ private fun CheckDebitTransactionScreen(
                     .fillMaxWidth()
                     .padding(bottom = 8.dp),
                 value = state.sourceAccountNumber,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                onValueChange = { amount ->
+                    if (amount.isNotEmpty() && amount.toDoubleOrNull() != null) {
+                        onEvent(CheckDebitTransactionEvent.UpdateAmount(amount.toDouble()))
+                    }
+
+                },
+                label = { Text("Amount") },
+            )
+
+
+            OutlinedTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp),
+                value = state.sourceAccountNumber,
                 onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateSourceAccountNumber(it)) },
                 label = { Text("Source Account Number") },
             )
 
             OutlinedTextField(
                 value = state.destinationAccountNumber,
-                onValueChange = { onEvent(CheckDebitTransactionEvent.UpdateDestinationAccountNumber(it)) },
+                onValueChange = {
+                    onEvent(
+                        CheckDebitTransactionEvent.UpdateDestinationAccountNumber(
+                            it
+                        )
+                    )
+                },
                 label = { Text(text = "Destination Account Number") },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -20,7 +20,12 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
+import ng.wimika.moneyguard_sdk.services.transactioncheck.TransactionCheck
+import ng.wimika.moneyguard_sdk.services.transactioncheck.models.DebitTransaction
+import ng.wimika.moneyguard_sdk.services.transactioncheck.models.LatLng
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
+import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.models.GeoLocation
 import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
 
@@ -55,6 +60,14 @@ class CheckDebitTransactionViewModel(
             CheckDebitTransactionState()
         )
 
+    private val transactionCheck: TransactionCheck? by lazy {
+        MoneyGuardClientApp.sdkService?.transactionCheck()
+    }
+
+    private val preferenceManager: IPreferenceManager? by lazy {
+        MoneyGuardClientApp.preferenceManager
+    }
+
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
             _checkDebitState.update { currentState ->
@@ -66,7 +79,6 @@ class CheckDebitTransactionViewModel(
                     ),
                 )
             }
-            // Remove location updates after getting the first location
             locationManager.removeUpdates(this)
         }
 
@@ -97,7 +109,7 @@ class CheckDebitTransactionViewModel(
                             )
                         }
                     } else {
-                        // If no last known location, request location updates
+
                         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                             locationManager.requestLocationUpdates(
                                 LocationManager.GPS_PROVIDER,
@@ -131,13 +143,15 @@ class CheckDebitTransactionViewModel(
             CheckDebitTransactionEvent.CheckDebitClick -> {
                 val currentState = _checkDebitState.value
                 val transactionData = TransactionData(
+                    amount = currentState.amount,
                     sourceAccountNumber = currentState.sourceAccountNumber,
                     destinationAccountNumber = currentState.destinationAccountNumber,
                     destinationBank = currentState.destinationBank,
                     memo = currentState.memo,
                     geoLocation = currentState.geoLocation
                 )
-                // TODO: Use transactionData for further processing
+
+                checkDebitTransaction(transactionData)
             }
 
             is CheckDebitTransactionEvent.UpdateSourceAccountNumber -> {
@@ -163,9 +177,35 @@ class CheckDebitTransactionViewModel(
                     currentState.copy(memo = event.value)
                 }
             }
+
+            is CheckDebitTransactionEvent.UpdateAmount -> {
+                _checkDebitState.update { currentState ->
+                    currentState.copy(amount = event.value)
+                }
+            }
         }
 
         shouldEnableButton()
+    }
+
+    private fun checkDebitTransaction(data: TransactionData) {
+        val sessionToken = preferenceManager?.getMoneyGuardToken() ?: ""
+        val debitTransaction = DebitTransaction(
+            sourceAccountNumber = data.sourceAccountNumber,
+            destinationAccountNumber = data.destinationAccountNumber,
+            destinationBank = data.destinationBank,
+            memo = data.memo,
+            amount = data.amount,
+            location = LatLng(
+                longitude = data.geoLocation.lon,
+                latitude = data.geoLocation.lat
+            )
+        )
+
+        transactionCheck?.checkDebitTransaction(sessionToken, debitTransaction,
+            onSuccess = {},
+            onFailure = {}
+        )
     }
 
     private fun shouldEnableButton() {
@@ -173,7 +213,8 @@ class CheckDebitTransactionViewModel(
         val shouldEnableButton = currentState.sourceAccountNumber.isNotEmpty() &&
                 currentState.destinationAccountNumber.isNotEmpty() &&
                 currentState.destinationBank.isNotEmpty() &&
-                currentState.memo.isNotEmpty() && !currentState.isLoading
+                currentState.memo.isNotEmpty() && currentState.amount > 0.0 &&
+                !currentState.isLoading
 
         _checkDebitState.update { currentState ->
             currentState.copy(enableButton = shouldEnableButton)
@@ -182,6 +223,7 @@ class CheckDebitTransactionViewModel(
 }
 
 data class TransactionData(
+    val amount: Double,
     val sourceAccountNumber: String,
     val destinationAccountNumber: String,
     val destinationBank: String,
