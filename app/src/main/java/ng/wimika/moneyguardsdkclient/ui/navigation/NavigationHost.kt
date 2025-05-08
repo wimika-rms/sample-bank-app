@@ -4,6 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransaction
+import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransactionDestination
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.Dashboard
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.DashboardDestination
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.DashboardScreen
@@ -69,12 +71,19 @@ fun NavigationHost(
                     navController.navigate(Landing) {
                         popUpTo(Dashboard) { inclusive = true }
                     }
+                },
+                onDebitCheckClick = {
+                    navController.navigate(CheckDebitTransaction)
                 }
             )
         }
 
         composable<Utility> {
             UtilityScreen()
+        }
+
+        composable <CheckDebitTransaction>{
+            CheckDebitTransactionDestination()
         }
     }
 }
