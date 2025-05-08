@@ -15,7 +15,7 @@ interface LoginRepository {
 class LoginRepositoryImpl: LoginRepository {
 
     private val apiService: MoneyGuardClientApiService by lazy {
-        NetworkUtils.getRetrofitClient("https://moneyguardservice.azurewebsites.net")
+        NetworkUtils.getRetrofitClient("https://moneyguardrestservice-ephgezbka5ggf7cb.uksouth-01.azurewebsites.net")
             .create(MoneyGuardClientApiService::class.java)
     }
 
