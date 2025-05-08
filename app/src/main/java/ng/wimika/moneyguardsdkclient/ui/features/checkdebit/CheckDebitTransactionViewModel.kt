@@ -3,13 +3,11 @@ package ng.wimika.moneyguardsdkclient.ui.features.checkdebit
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -20,14 +18,15 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
 import ng.wimika.moneyguard_sdk.services.transactioncheck.TransactionCheck
 import ng.wimika.moneyguard_sdk.services.transactioncheck.models.DebitTransaction
+import ng.wimika.moneyguard_sdk.services.transactioncheck.models.DebitTransactionCheckResult
 import ng.wimika.moneyguard_sdk.services.transactioncheck.models.LatLng
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.models.GeoLocation
 import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
+import ng.wimika.moneyguard_sdk_commons.types.RiskStatus
 
 class CheckDebitTransactionViewModelFactory(
     private val context: Context,
@@ -154,6 +153,14 @@ class CheckDebitTransactionViewModel(
                 checkDebitTransaction(transactionData)
             }
 
+            CheckDebitTransactionEvent.DismissAlert -> {
+                _checkDebitState.update { currentState ->
+                    currentState.copy(
+                        alertData = AlertData()
+                    )
+                }
+            }
+
             is CheckDebitTransactionEvent.UpdateSourceAccountNumber -> {
                 _checkDebitState.update { currentState ->
                     currentState.copy(sourceAccountNumber = event.value)
@@ -189,6 +196,9 @@ class CheckDebitTransactionViewModel(
     }
 
     private fun checkDebitTransaction(data: TransactionData) {
+        _checkDebitState.update { currentState ->
+            currentState.copy(isLoading = true)
+        }
         val sessionToken = preferenceManager?.getMoneyGuardToken() ?: ""
         val debitTransaction = DebitTransaction(
             sourceAccountNumber = data.sourceAccountNumber,
@@ -203,9 +213,91 @@ class CheckDebitTransactionViewModel(
         )
 
         transactionCheck?.checkDebitTransaction(sessionToken, debitTransaction,
-            onSuccess = {},
-            onFailure = {}
+            onSuccess = { result ->
+                if (result.success) {
+                    handleRiskStatus(result)
+                }
+            },
+            onFailure = {
+                _checkDebitState.update { currentState ->
+                    currentState.copy(isLoading = false)
+                }
+            }
         )
+    }
+
+    private fun handleRiskStatus(result: DebitTransactionCheckResult) {
+        when (result.status) {
+            RiskStatus.RISK_STATUS_WARN -> {
+                val commaSeparatedRisks = result.risks
+                    .filter { it.status == RiskStatus.RISK_STATUS_WARN }
+                    .joinToString(", ") { it.statusSummary.toString() }
+                
+                _checkDebitState.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        alertData = AlertData(
+                            showAlert = true,
+                            title = "Warning",
+                            message = "We have detected some threats that may put your transaction at risk, " +
+                                    "please review and proceed with caution - $commaSeparatedRisks",
+                            buttonText = "Proceed"
+                        )
+                    )
+                }
+            }
+            RiskStatus.RISK_STATUS_UNSAFE_CREDENTIALS -> {
+                _checkDebitState.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        alertData = AlertData(
+                            showAlert = true,
+                            title = "2FA Required",
+                            message = "We have detected that you logged in with compromised credentials, " +
+                                    "a 2FA is required to proceed",
+                            buttonText = "Proceed"
+                        )
+                    )
+                }
+            }
+            RiskStatus.RISK_STATUS_UNSAFE_LOCATION -> {
+                _checkDebitState.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        alertData = AlertData(
+                            showAlert = true,
+                            title = "2FA Required",
+                            message = "We have detected that this transaction is happening in a suspicious location, " +
+                                    "a 2FA is required to proceed",
+                            buttonText = "Proceed"
+                        )
+                    )
+                }
+            }
+            RiskStatus.RISK_STATUS_UNSAFE -> {
+                val commaSeparatedRisks = result.risks
+                    .filter { it.status == RiskStatus.RISK_STATUS_UNSAFE }
+                    .joinToString(", ") { it.statusSummary.toString() }
+                
+                _checkDebitState.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        alertData = AlertData(
+                            showAlert = true,
+                            title = "2FA Required",
+                            message = "We have detected some threats that may put your transaction at risk, " +
+                                    "a 2FA is required to proceed - $commaSeparatedRisks",
+                            buttonText = "Proceed"
+                        )
+                    )
+                }
+            }
+            else -> {
+                _checkDebitState.update { currentState ->
+                    currentState.copy(isLoading = false)
+                }
+            }
+        }
     }
 
     private fun shouldEnableButton() {
