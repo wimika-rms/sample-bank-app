@@ -21,7 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
 import ng.wimika.moneyguard_sdk_commons.types.SpecificRisk
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 
 @Serializable
@@ -192,41 +197,58 @@ fun StartupRiskDestination(
     launchLoginScreen: () -> Unit
 ) {
     val state by viewModel.startupRiskState.collectAsStateWithLifecycle()
+    var showModal by remember { mutableStateOf(false) }
+    var modalData by remember { mutableStateOf<StartupRiskResultEvent?>(null) }
 
-    if (state.currentRiskEvent != null) {
-        when (val event = state.currentRiskEvent) {
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.distinctUntilChanged().collect { event ->
+            when(event) {
+                StartupRiskResultEvent.RiskFree -> {
+                    launchLoginScreen()
+                }
+                is StartupRiskResultEvent.SevereRisk -> {
+                    modalData = event
+                    showModal = true
+                }
+                is StartupRiskResultEvent.WarningRisk -> {
+                    modalData = event
+                    showModal = true
+                }
+            }
+        }
+    }
+
+    if (showModal && modalData != null) {
+        when (val event = modalData) {
             is StartupRiskResultEvent.SevereRisk -> {
                 RiskModal(
                     isSevere = true,
                     issues = event.issues,
                     onDismiss = {
-                        viewModel.dismissRiskModal()
-                        // Exit the app or handle severe risk case
+                        showModal = false
+                        modalData = null
                     },
                     onSecondaryAction = {
-                        viewModel.dismissRiskModal()
+                        showModal = false
+                        modalData = null
                         launchLoginScreen()
                     }
                 )
             }
-
             is StartupRiskResultEvent.WarningRisk -> {
                 RiskModal(
                     isSevere = false,
                     issues = event.issues,
                     onDismiss = {
-                        viewModel.dismissRiskModal()
-                        // Handle warning risk case
+                        showModal = false
+                        modalData = null
                     },
                     onSecondaryAction = {
-                        viewModel.dismissRiskModal()
+                        showModal = false
+                        modalData = null
                         launchLoginScreen()
                     }
                 )
-            }
-
-            StartupRiskResultEvent.RiskFree -> {
-                launchLoginScreen()
             }
             else -> {}
         }
@@ -236,6 +258,11 @@ fun StartupRiskDestination(
         state = state,
         onEvent = viewModel::onEvent,
     )
+}
+
+@Composable
+fun LaunchedEffect(x0: Unit, content: @Composable () -> Unit) {
+    TODO("Not yet implemented")
 }
 
 @Composable
@@ -287,8 +314,6 @@ private fun StartupRiskScreenRiskFreePreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = false,
-                isRiskFree = true,
-                isWarningRisk = false
             ),
             onEvent = {}
         )
@@ -302,8 +327,6 @@ private fun StartupRiskScreenWarningPreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = false,
-                isRiskFree = false,
-                isWarningRisk = true
             ),
             onEvent = {}
         )
@@ -317,8 +340,6 @@ private fun StartupRiskScreenSeverePreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = false,
-                isRiskFree = false,
-                isWarningRisk = false
             ),
             onEvent = {}
         )
@@ -332,8 +353,6 @@ private fun StartupRiskScreenLoadingPreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = true,
-                isRiskFree = false,
-                isWarningRisk = false
             ),
             onEvent = {}
         )
