@@ -20,7 +20,7 @@ import ng.wimika.moneyguardsdkclient.ui.features.startriskchecks.StartupRiskScre
 import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
-import ng.wimika.moneyguardsdkclient.ui.features.accountselection.AccountSelectionDestination
+
 
 @Composable
 fun NavigationHost(
@@ -100,9 +100,7 @@ fun NavigationHost(
             )
         }
 
-        composable("account_selection") {
-            AccountSelectionDestination()
-        }
+
 
         composable<MoneyGuard> {
             MoneyGuardNavigation(
