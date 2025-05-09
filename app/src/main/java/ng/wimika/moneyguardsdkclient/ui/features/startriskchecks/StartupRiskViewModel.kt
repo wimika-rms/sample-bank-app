@@ -2,9 +2,11 @@ package ng.wimika.moneyguardsdkclient.ui.features.startriskchecks
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -14,6 +16,11 @@ import ng.wimika.moneyguard_sdk.services.prelaunch.types.PreLaunchDecision
 import ng.wimika.moneyguard_sdk_commons.types.RiskStatus
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 
+
+sealed class StartupRiskEvent {
+    data object StartStartUpRiskCheck: StartupRiskEvent()
+}
+
 class StartupRiskViewModel: ViewModel() {
 
     private val moneyGuardPrelaunch: MoneyGuardPrelaunch? by lazy {
@@ -22,13 +29,13 @@ class StartupRiskViewModel: ViewModel() {
 
     private val _startupRiskState: MutableStateFlow<StartupRiskState> = MutableStateFlow(StartupRiskState())
     val startupRiskState: StateFlow<StartupRiskState> = _startupRiskState
-        .onStart {
-            accessStartupRisks()
-        }
         .stateIn(viewModelScope,
             SharingStarted.WhileSubscribed(5000),
             StartupRiskState()
         )
+
+    private val _uiEvent = MutableSharedFlow<StartupRiskResultEvent>()
+    val uiEvent = _uiEvent.asSharedFlow()
 
     fun accessStartupRisks() {
         _startupRiskState.update { currentState ->
@@ -47,38 +54,30 @@ class StartupRiskViewModel: ViewModel() {
 
                 when(startupRisk.preLaunchVerdict.decision) {
                     PreLaunchDecision.Launch -> {
-                        _startupRiskState.update { currentState ->
-                            currentState.copy(
-                                isRiskFree = true,
-                                currentRiskEvent = StartupRiskResultEvent.RiskFree
-                            )
-                        }
+                        _uiEvent.emit(StartupRiskResultEvent.RiskFree)
                     }
                     PreLaunchDecision.LaunchWithWarning -> {
-                        _startupRiskState.update { currentState ->
-                            currentState.copy(
-                                isWarningRisk = true,
-                                currentRiskEvent = StartupRiskResultEvent.WarningRisk(issues),
-                                showRiskModal = true
-                            )
-                        }
+                        _uiEvent.emit(StartupRiskResultEvent.WarningRisk(issues))
                     }
                     PreLaunchDecision.DoNotLaunch -> {
-                        _startupRiskState.update { currentState ->
-                            currentState.copy(
-                                currentRiskEvent = StartupRiskResultEvent.SevereRisk(issues),
-                                showRiskModal = true
-                            )
-                        }
+                        _uiEvent.emit(StartupRiskResultEvent.SevereRisk(issues))
                     }
                 }
             }
         }
     }
 
-    fun dismissRiskModal() {
-        _startupRiskState.update { currentState ->
-            currentState.copy(showRiskModal = false)
+    fun onEvent(event: StartupRiskEvent) {
+        when(event) {
+            is StartupRiskEvent.StartStartUpRiskCheck -> {
+                accessStartupRisks()
+            }
         }
+    }
+
+    fun dismissRiskModal() {
+//        _startupRiskState.update { currentState ->
+//            currentState.copy(showRiskModal = false)
+//        }
     }
 }

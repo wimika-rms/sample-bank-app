@@ -21,7 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -32,6 +36,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
 import ng.wimika.moneyguard_sdk_commons.types.SpecificRisk
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 
 @Serializable
@@ -189,54 +194,82 @@ fun RiskModal(
 @Composable
 fun StartupRiskDestination(
     viewModel: StartupRiskViewModel = viewModel(),
-    launchMainScreen: () -> Unit
+    launchLoginScreen: () -> Unit
 ) {
     val state by viewModel.startupRiskState.collectAsStateWithLifecycle()
+    var showModal by remember { mutableStateOf(false) }
+    var modalData by remember { mutableStateOf<StartupRiskResultEvent?>(null) }
 
-    if (state.showRiskModal && state.currentRiskEvent != null) {
-        when (val event = state.currentRiskEvent) {
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.distinctUntilChanged().collect { event ->
+            when(event) {
+                StartupRiskResultEvent.RiskFree -> {
+                    launchLoginScreen()
+                }
+                is StartupRiskResultEvent.SevereRisk -> {
+                    modalData = event
+                    showModal = true
+                }
+                is StartupRiskResultEvent.WarningRisk -> {
+                    modalData = event
+                    showModal = true
+                }
+            }
+        }
+    }
+
+    if (showModal && modalData != null) {
+        when (val event = modalData) {
             is StartupRiskResultEvent.SevereRisk -> {
                 RiskModal(
                     isSevere = true,
                     issues = event.issues,
                     onDismiss = {
-                        viewModel.dismissRiskModal()
-                        // Exit the app or handle severe risk case
+                        showModal = false
+                        modalData = null
                     },
                     onSecondaryAction = {
-                        viewModel.dismissRiskModal()
-                        launchMainScreen()
+                        showModal = false
+                        modalData = null
+                        launchLoginScreen()
                     }
                 )
             }
-
             is StartupRiskResultEvent.WarningRisk -> {
                 RiskModal(
                     isSevere = false,
                     issues = event.issues,
                     onDismiss = {
-                        viewModel.dismissRiskModal()
-                        // Handle warning risk case
+                        showModal = false
+                        modalData = null
                     },
                     onSecondaryAction = {
-                        viewModel.dismissRiskModal()
-                        launchMainScreen()
+                        showModal = false
+                        modalData = null
+                        launchLoginScreen()
                     }
                 )
             }
-
             else -> {}
         }
     }
 
     StartupRiskScreen(
         state = state,
-        proceedClicked = launchMainScreen
+        onEvent = viewModel::onEvent,
     )
 }
 
 @Composable
-fun StartupRiskScreen(state: StartupRiskState, proceedClicked: (() -> Unit)? = null) {
+fun LaunchedEffect(x0: Unit, content: @Composable () -> Unit) {
+    TODO("Not yet implemented")
+}
+
+@Composable
+fun StartupRiskScreen(
+    state: StartupRiskState,
+    onEvent: (StartupRiskEvent) -> Unit
+) {
     Surface(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -255,26 +288,10 @@ fun StartupRiskScreen(state: StartupRiskState, proceedClicked: (() -> Unit)? = n
             }
 
             if (!state.isLoading) {
-                // Risk Status Text
-                Text(
-                    text = when {
-                        state.isRiskFree -> "Proceed to launch the app"
-                        state.isWarningRisk -> "Proceed with caution"
-                        else -> "Cannot proceed"
-                    },
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = when {
-                        state.isRiskFree -> Color(0xFF4CAF50)
-                        state.isWarningRisk -> Color(0xFFFFA000)
-                        else -> Color(0xFFF44336)
-                    },
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                // Proceed Button
                 Button(
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        proceedClicked?.invoke()
+                        onEvent(StartupRiskEvent.StartStartUpRiskCheck)
                     },
                     enabled = state.shouldEnableButton,
                     colors = ButtonDefaults.buttonColors(
@@ -282,7 +299,7 @@ fun StartupRiskScreen(state: StartupRiskState, proceedClicked: (() -> Unit)? = n
                         disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 ) {
-                    Text("Proceed")
+                    Text("Proceed to login")
                 }
             }
 
@@ -297,10 +314,8 @@ private fun StartupRiskScreenRiskFreePreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = false,
-                isRiskFree = true,
-                isWarningRisk = false
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }
@@ -312,10 +327,8 @@ private fun StartupRiskScreenWarningPreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = false,
-                isRiskFree = false,
-                isWarningRisk = true
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }
@@ -327,10 +340,8 @@ private fun StartupRiskScreenSeverePreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = false,
-                isRiskFree = false,
-                isWarningRisk = false
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }
@@ -342,10 +353,8 @@ private fun StartupRiskScreenLoadingPreview() {
         StartupRiskScreen(
             state = StartupRiskState(
                 isLoading = true,
-                isRiskFree = false,
-                isWarningRisk = false
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }

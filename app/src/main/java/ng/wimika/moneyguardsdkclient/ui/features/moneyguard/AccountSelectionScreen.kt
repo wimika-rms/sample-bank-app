@@ -1,6 +1,5 @@
 package ng.wimika.moneyguardsdkclient.ui.features.moneyguard
 
-import android.widget.Space
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
