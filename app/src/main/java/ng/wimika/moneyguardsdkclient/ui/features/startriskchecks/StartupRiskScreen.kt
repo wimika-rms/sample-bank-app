@@ -193,7 +193,7 @@ fun StartupRiskDestination(
 ) {
     val state by viewModel.startupRiskState.collectAsStateWithLifecycle()
 
-    if (state.showRiskModal && state.currentRiskEvent != null) {
+    if (state.currentRiskEvent != null) {
         when (val event = state.currentRiskEvent) {
             is StartupRiskResultEvent.SevereRisk -> {
                 RiskModal(
@@ -228,7 +228,7 @@ fun StartupRiskDestination(
             StartupRiskResultEvent.RiskFree -> {
                 launchLoginScreen()
             }
-            null -> {}
+            else -> {}
         }
     }
 

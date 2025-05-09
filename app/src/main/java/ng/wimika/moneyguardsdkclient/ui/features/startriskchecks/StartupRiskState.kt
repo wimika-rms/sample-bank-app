@@ -3,7 +3,7 @@ package ng.wimika.moneyguardsdkclient.ui.features.startriskchecks
 import ng.wimika.moneyguard_sdk_commons.types.SpecificRisk
 
 data class StartupRiskState(
-    val isLoading: Boolean = true,
+    val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val riskStatusMessage: String? = null,
     val isRiskFree: Boolean = false,
@@ -12,7 +12,7 @@ data class StartupRiskState(
     val currentRiskEvent: StartupRiskResultEvent? = null
 ) {
     val shouldEnableButton: Boolean
-        get() { return  !isLoading && (isRiskFree || isWarningRisk) }
+        get() { return  !isLoading  }
 }
 
 sealed class StartupRiskResultEvent {

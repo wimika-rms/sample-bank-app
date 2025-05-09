@@ -30,7 +30,7 @@ fun NavigationHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = if (isLoggedIn) StartupRiskScreen else Landing
+        startDestination = if (isLoggedIn) Dashboard else StartupRiskScreen
     ) {
 
         composable<StartupRiskScreen> {

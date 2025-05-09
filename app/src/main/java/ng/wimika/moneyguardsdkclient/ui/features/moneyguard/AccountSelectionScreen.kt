@@ -1,6 +1,5 @@
 package ng.wimika.moneyguardsdkclient.ui.features.moneyguard
 
-import android.widget.Space
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,7 +27,7 @@ fun AccountSelectionScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        moneyGuardPolicy.getUserAccounts(token, /*partnerBankId = 101*/).fold(
+        moneyGuardPolicy.getUserAccounts(token, partnerBankId = 101).fold(
             onSuccess = { response ->
                 accounts = response.bankAccounts
                 isLoading = false
