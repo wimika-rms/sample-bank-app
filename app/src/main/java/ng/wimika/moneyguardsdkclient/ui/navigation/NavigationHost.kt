@@ -8,7 +8,6 @@ import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransactio
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransactionDestination
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.Dashboard
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.DashboardDestination
-import ng.wimika.moneyguardsdkclient.ui.features.dashboard.DashboardScreen
 import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
 import ng.wimika.moneyguardsdkclient.ui.features.landing.LandingScreen
 import ng.wimika.moneyguardsdkclient.ui.features.login.Login
@@ -31,23 +30,13 @@ fun NavigationHost(
 ) {
     NavHost(
         navController = navController,
-        //startDestination = if (isLoggedIn) StartupRiskScreen else Landing
-        startDestination = if (isLoggedIn) Dashboard else Landing
-        // Comment out prelaunch checks for now
-        // startDestination = if (isLoggedIn) StartupRiskScreen else Landing
+        startDestination = if (isLoggedIn) StartupRiskScreen else Landing
     ) {
 
         composable<StartupRiskScreen> {
             StartupRiskDestination(
-                launchMainScreen =  {
-                    if (isLoggedIn) {
-                        navController.navigate(Dashboard) {
-                            popUpTo(Landing) { inclusive = true }
-                        }
-                        return@StartupRiskDestination
-                    }
-
-                    navController.navigate(Landing)
+                launchLoginScreen =  {
+                    navController.navigate(Login)
                 }
             )
         }
@@ -64,8 +53,6 @@ fun NavigationHost(
         composable<Login> {
             LoginDestination(
                 onLoginSuccess = {
-                   // navController.navigate(StartupRiskScreen) {
-                    // Navigate directly to dashboard after login
                     navController.navigate(Dashboard) {
                         popUpTo(Landing) { inclusive = true }
                     }

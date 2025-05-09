@@ -14,6 +14,11 @@ import ng.wimika.moneyguard_sdk.services.prelaunch.types.PreLaunchDecision
 import ng.wimika.moneyguard_sdk_commons.types.RiskStatus
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 
+
+sealed class StartupRiskEvent {
+    data object StartStartUpRiskCheck: StartupRiskEvent()
+}
+
 class StartupRiskViewModel: ViewModel() {
 
     private val moneyGuardPrelaunch: MoneyGuardPrelaunch? by lazy {
@@ -22,9 +27,6 @@ class StartupRiskViewModel: ViewModel() {
 
     private val _startupRiskState: MutableStateFlow<StartupRiskState> = MutableStateFlow(StartupRiskState())
     val startupRiskState: StateFlow<StartupRiskState> = _startupRiskState
-        .onStart {
-            accessStartupRisks()
-        }
         .stateIn(viewModelScope,
             SharingStarted.WhileSubscribed(5000),
             StartupRiskState()
@@ -72,6 +74,15 @@ class StartupRiskViewModel: ViewModel() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+
+    fun onEvent(event: StartupRiskEvent) {
+        when(event) {
+            is StartupRiskEvent.StartStartUpRiskCheck -> {
+                accessStartupRisks()
             }
         }
     }

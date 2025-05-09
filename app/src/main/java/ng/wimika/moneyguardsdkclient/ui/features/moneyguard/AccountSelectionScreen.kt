@@ -28,7 +28,7 @@ fun AccountSelectionScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        moneyGuardPolicy.getUserAccounts(token, partnerBankId = 101).fold(
+        moneyGuardPolicy.getUserAccounts(token, /*partnerBankId = 101*/).fold(
             onSuccess = { response ->
                 accounts = response.bankAccounts
                 isLoading = false

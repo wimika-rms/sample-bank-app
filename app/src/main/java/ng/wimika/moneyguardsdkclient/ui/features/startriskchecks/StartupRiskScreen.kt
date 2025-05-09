@@ -189,7 +189,7 @@ fun RiskModal(
 @Composable
 fun StartupRiskDestination(
     viewModel: StartupRiskViewModel = viewModel(),
-    launchMainScreen: () -> Unit
+    launchLoginScreen: () -> Unit
 ) {
     val state by viewModel.startupRiskState.collectAsStateWithLifecycle()
 
@@ -205,7 +205,7 @@ fun StartupRiskDestination(
                     },
                     onSecondaryAction = {
                         viewModel.dismissRiskModal()
-                        launchMainScreen()
+                        launchLoginScreen()
                     }
                 )
             }
@@ -220,23 +220,29 @@ fun StartupRiskDestination(
                     },
                     onSecondaryAction = {
                         viewModel.dismissRiskModal()
-                        launchMainScreen()
+                        launchLoginScreen()
                     }
                 )
             }
 
-            else -> {}
+            StartupRiskResultEvent.RiskFree -> {
+                launchLoginScreen()
+            }
+            null -> {}
         }
     }
 
     StartupRiskScreen(
         state = state,
-        proceedClicked = launchMainScreen
+        onEvent = viewModel::onEvent,
     )
 }
 
 @Composable
-fun StartupRiskScreen(state: StartupRiskState, proceedClicked: (() -> Unit)? = null) {
+fun StartupRiskScreen(
+    state: StartupRiskState,
+    onEvent: (StartupRiskEvent) -> Unit
+) {
     Surface(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -255,26 +261,10 @@ fun StartupRiskScreen(state: StartupRiskState, proceedClicked: (() -> Unit)? = n
             }
 
             if (!state.isLoading) {
-                // Risk Status Text
-                Text(
-                    text = when {
-                        state.isRiskFree -> "Proceed to launch the app"
-                        state.isWarningRisk -> "Proceed with caution"
-                        else -> "Cannot proceed"
-                    },
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = when {
-                        state.isRiskFree -> Color(0xFF4CAF50)
-                        state.isWarningRisk -> Color(0xFFFFA000)
-                        else -> Color(0xFFF44336)
-                    },
-                    modifier = Modifier.padding(bottom = 24.dp)
-                )
-
-                // Proceed Button
                 Button(
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        proceedClicked?.invoke()
+                        onEvent(StartupRiskEvent.StartStartUpRiskCheck)
                     },
                     enabled = state.shouldEnableButton,
                     colors = ButtonDefaults.buttonColors(
@@ -282,7 +272,7 @@ fun StartupRiskScreen(state: StartupRiskState, proceedClicked: (() -> Unit)? = n
                         disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 ) {
-                    Text("Proceed")
+                    Text("Proceed to login")
                 }
             }
 
@@ -300,7 +290,7 @@ private fun StartupRiskScreenRiskFreePreview() {
                 isRiskFree = true,
                 isWarningRisk = false
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }
@@ -315,7 +305,7 @@ private fun StartupRiskScreenWarningPreview() {
                 isRiskFree = false,
                 isWarningRisk = true
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }
@@ -330,7 +320,7 @@ private fun StartupRiskScreenSeverePreview() {
                 isRiskFree = false,
                 isWarningRisk = false
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }
@@ -345,7 +335,7 @@ private fun StartupRiskScreenLoadingPreview() {
                 isRiskFree = false,
                 isWarningRisk = false
             ),
-            proceedClicked = {}
+            onEvent = {}
         )
     }
 }
