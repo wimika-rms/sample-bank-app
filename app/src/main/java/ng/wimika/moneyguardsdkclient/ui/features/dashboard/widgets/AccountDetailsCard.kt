@@ -66,7 +66,7 @@ fun AccountDetailsCard() {
                 ) {
                     Icon(Icons.Default.Home, tint = Color.DarkGray, contentDescription = null)
                     Text(
-                        text = "Wimika Bank",
+                        text = "Wimika Demo Bank",
                         color = Color.White,
                         style = MaterialTheme.typography.labelMedium,
                     )

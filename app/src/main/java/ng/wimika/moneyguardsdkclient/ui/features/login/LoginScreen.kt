@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -22,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -30,6 +34,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+
 
 @Serializable
 object Login
@@ -38,6 +46,7 @@ sealed class LoginEvent {
     data object OnLoginClick : LoginEvent()
     data class OnEmailChange(val email: String) : LoginEvent()
     data class OnPasswordChange(val password: String) : LoginEvent()
+    data object OnPasswordVisibilityToggle : LoginEvent()
 }
 
 
@@ -110,7 +119,21 @@ fun LoginScreen(
                     onValueChange = {
                         onEvent(LoginEvent.OnPasswordChange(it))
                     },
-                    label = { Text("Password") }
+                    label = { Text("Password") },
+                    trailingIcon = {
+                        IconButton(onClick = { onEvent(LoginEvent.OnPasswordVisibilityToggle) }) {
+                            Icon(
+                                imageVector = if (loginState.showPassword) 
+                                    Icons.Default.Lock
+                                else 
+                                    Icons.Default.Edit,
+                                contentDescription = if (loginState.showPassword) 
+                                    "Hide password" 
+                                else 
+                                    "Show password"
+                            )
+                        }
+                    }
                 )
 
                 Box(

@@ -20,6 +20,7 @@ import ng.wimika.moneyguardsdkclient.ui.features.startriskchecks.StartupRiskScre
 import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
+import ng.wimika.moneyguardsdkclient.ui.features.accountselection.AccountSelectionDestination
 
 @Composable
 fun NavigationHost(
@@ -34,10 +35,8 @@ fun NavigationHost(
         startDestination = if (isLoggedIn) Dashboard else Landing
         // Comment out prelaunch checks for now
         // startDestination = if (isLoggedIn) StartupRiskScreen else Landing
-        startDestination = if (isLoggedIn) Dashboard else Landing
     ) {
-        // Comment out prelaunch checks for now
-        /*
+
         composable<StartupRiskScreen> {
             StartupRiskDestination(
                 launchMainScreen =  {
@@ -66,7 +65,6 @@ fun NavigationHost(
             LoginDestination(
                 onLoginSuccess = {
                    // navController.navigate(StartupRiskScreen) {
-                    navController.navigate(Dashboard) {
                     // Navigate directly to dashboard after login
                     navController.navigate(Dashboard) {
                         popUpTo(Landing) { inclusive = true }
@@ -95,7 +93,15 @@ fun NavigationHost(
         }
 
         composable<Utility> {
-            UtilityScreen()
+            UtilityScreen(
+                onNavigateToMoneyGuard = {
+                    navController.navigate(MoneyGuard)
+                }
+            )
+        }
+
+        composable("account_selection") {
+            AccountSelectionDestination()
         }
 
         composable<MoneyGuard> {

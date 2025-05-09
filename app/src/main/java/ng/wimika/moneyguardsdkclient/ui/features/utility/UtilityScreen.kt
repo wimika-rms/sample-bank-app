@@ -24,7 +24,9 @@ object Utility
 
 
 @Composable
-fun UtilityScreen() {
+fun UtilityScreen(
+    onNavigateToMoneyGuard: () -> Unit
+) {
     val sdkUtils: MoneyGuardUtility? = LocalMoneyGuardUtility.current
 
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -35,6 +37,10 @@ fun UtilityScreen() {
         ) {
             val appContext = LocalContext.current
 
+            Button(onClick = onNavigateToMoneyGuard) {
+                Text("Enable MoneyGuard")
+            }
+
             Button(onClick = {
                 val isAppInstalled = sdkUtils?.isMoneyGuardInstalled()
                 Toast.makeText(
@@ -43,20 +49,22 @@ fun UtilityScreen() {
                     Toast.LENGTH_SHORT
                 ).show()
             }) {
-                Text("Check MoneyGuard App Installation")
+                Text("Check MoneyGuard Status")
             }
 
             Button(onClick = {
                 sdkUtils?.launchAppInstallation()
             }) {
-                Text("Launch MoneyGuard App installation")
+                Text("Install Moneyguard")
             }
 
             Button(onClick = {
                 sdkUtils?.launchMoneyGuardApp()
             }) {
-                Text("Launch MoneyGuard App")
+                Text("Launch MoneyGuard Standalone App")
             }
+
+
         }
     }
 }

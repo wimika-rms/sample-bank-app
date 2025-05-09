@@ -52,8 +52,7 @@ object Dashboard
 fun DashboardDestination(
     viewModel: LoginViewModel = viewModel(),
     onUtilitiesClick: () -> Unit,
-    onLogout: () -> Unit,
-    onEnableMoneyGuard: () -> Unit
+    onEnableMoneyGuard: () -> Unit,
     onDebitCheckClick: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -71,8 +70,7 @@ fun DashboardDestination(
 @Composable
 fun DashboardScreen(
     onUtilitiesClick: () -> Unit,
-    onLogout: () -> Unit,
-    onEnableMoneyGuard: () -> Unit
+    onEnableMoneyGuard: () -> Unit,
     onDebitCheckClick: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -123,16 +121,18 @@ fun DashboardScreen(
                 }
             }
 
-            FeatureCategory(
-                title = "Enable MoneyGuard",
-                icon = Icons.Default.Add,
-                onClick = onEnableMoneyGuard
-            )
+//            FeatureCategory(
+//                title = "Enable MoneyGuard",
+//                icon = Icons.Default.Add,
+//                onClick = onEnableMoneyGuard
+//            )
+//
+//            FeatureCategory(
+//                title = "Utilities",
+//                icon = Icons.Default.Settings,
+//                onClick = onUtilitiesClick
+//            )
 
-            FeatureCategory(
-                title = "Utilities",
-                icon = Icons.Default.Settings,
-                onClick = onUtilitiesClick
             AccountDetailsCard()
 
             Box(modifier = Modifier.height(16.dp))
@@ -163,6 +163,7 @@ private fun DashboardScreenPreview() {
     DashboardScreen(
         onDebitCheckClick = {},
         onUtilitiesClick = {},
-        onLogout = {}
+        onLogout = {},
+        onEnableMoneyGuard = {}
     )
 }
