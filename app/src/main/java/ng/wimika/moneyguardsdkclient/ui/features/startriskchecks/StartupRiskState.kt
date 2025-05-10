@@ -6,6 +6,7 @@ data class StartupRiskState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val riskStatusMessage: String? = null,
+    val risks: List<SpecificRisk> = emptyList()
 ) {
     val shouldEnableButton: Boolean
         get() { return  !isLoading  }

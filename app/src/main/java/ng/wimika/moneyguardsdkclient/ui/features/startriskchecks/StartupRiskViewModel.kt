@@ -19,6 +19,7 @@ import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 
 sealed class StartupRiskEvent {
     data object StartStartUpRiskCheck: StartupRiskEvent()
+    data object ProceedToLogin: StartupRiskEvent()
 }
 
 class StartupRiskViewModel: ViewModel() {
@@ -37,40 +38,50 @@ class StartupRiskViewModel: ViewModel() {
     private val _uiEvent = MutableSharedFlow<StartupRiskResultEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
-    fun accessStartupRisks() {
-        _startupRiskState.update { currentState ->
-            currentState.copy(isLoading = true)
-        }
-
-        viewModelScope.launch {
-            val startupRisk = moneyGuardPrelaunch?.startup()
-
-            _startupRiskState.update { currentState ->
-                currentState.copy(isLoading = false)
+    fun onEvent(event: StartupRiskEvent) {
+        when (event) {
+            StartupRiskEvent.StartStartUpRiskCheck -> {
+                checkStartupRisks()
             }
-
-            if (startupRisk != null && startupRisk.moneyGuardActive) {
-                val issues = startupRisk.risks.filter { risk -> risk.status != RiskStatus.RISK_STATUS_SAFE }
-
-                when(startupRisk.preLaunchVerdict.decision) {
-                    PreLaunchDecision.Launch -> {
-                        _uiEvent.emit(StartupRiskResultEvent.RiskFree)
-                    }
-                    PreLaunchDecision.LaunchWithWarning -> {
-                        _uiEvent.emit(StartupRiskResultEvent.WarningRisk(issues))
-                    }
-                    PreLaunchDecision.DoNotLaunch -> {
-                        _uiEvent.emit(StartupRiskResultEvent.SevereRisk(issues))
-                    }
-                }
+            StartupRiskEvent.ProceedToLogin -> {
+                // Navigation is handled by the screen
             }
         }
     }
 
-    fun onEvent(event: StartupRiskEvent) {
-        when(event) {
-            is StartupRiskEvent.StartStartUpRiskCheck -> {
-                accessStartupRisks()
+    private fun checkStartupRisks() {
+        viewModelScope.launch {
+            _startupRiskState.update { it.copy(isLoading = true) }
+            
+            try {
+                val startupRisk = moneyGuardPrelaunch?.startup()
+                _startupRiskState.update { 
+                    it.copy(
+                        isLoading = false,
+                        risks = startupRisk?.risks ?: emptyList()
+                    )
+                }
+
+                if (startupRisk == null || startupRisk.risks.isEmpty()) {
+                    _uiEvent.emit(StartupRiskResultEvent.RiskFree)
+                } else {
+                    val severeRisks = startupRisk.risks.filter { it.status == RiskStatus.RISK_STATUS_UNSAFE }
+                    val warningRisks = startupRisk.risks.filter { it.status == RiskStatus.RISK_STATUS_WARN }
+
+                    if (severeRisks.isNotEmpty()) {
+                        _uiEvent.emit(StartupRiskResultEvent.SevereRisk(severeRisks))
+                    }
+                    if (warningRisks.isNotEmpty()) {
+                        _uiEvent.emit(StartupRiskResultEvent.WarningRisk(warningRisks))
+                    }
+                }
+            } catch (e: Exception) {
+                _startupRiskState.update { 
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message
+                    )
+                }
             }
         }
     }

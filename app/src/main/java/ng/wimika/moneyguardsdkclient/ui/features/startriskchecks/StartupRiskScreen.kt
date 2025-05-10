@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
 import ng.wimika.moneyguard_sdk_commons.types.SpecificRisk
+import ng.wimika.moneyguard_sdk_commons.types.RiskStatus
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -43,11 +44,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 object StartupRiskScreen
 
 private fun displayWarningMessages(issues: List<SpecificRisk>): List<RiskMessage> {
+    android.util.Log.d("StartupRiskScreen", "displayWarningMessages called with ${issues.size} issues")
     val messages = mutableListOf<RiskMessage>()
 
     issues.forEach { issue ->
+        android.util.Log.d("StartupRiskScreen", "Processing issue: ${issue.name}")
         when (issue.name) {
-            RiskConstants.SPECIFIC_RISK_DEVICE_SECURITY_MISCONFIGURATION_USB_DEBUGGING_NAME -> {
+            "Security Misconfiguration USB Debugging" -> {
+                android.util.Log.d("StartupRiskScreen", "Matched USB Debugging risk")
                 messages.add(
                     RiskMessage(
                         title = "Launch Warning",
@@ -58,8 +62,9 @@ private fun displayWarningMessages(issues: List<SpecificRisk>): List<RiskMessage
                 )
             }
 
-            RiskConstants.SPECIFIC_RISK_NETWORK_WIFI_ENCRYPTION_NAME,
-            RiskConstants.SPECIFIC_RISK_NETWORK_WIFI_PASSWORD_PROTECTION_NAME -> {
+            "WiFi Encryption",
+            "WiFi Password Protection" -> {
+                android.util.Log.d("StartupRiskScreen", "Matched WiFi risk")
                 messages.add(
                     RiskMessage(
                         title = "Launch Warning",
@@ -69,17 +74,24 @@ private fun displayWarningMessages(issues: List<SpecificRisk>): List<RiskMessage
                     )
                 )
             }
+            else -> {
+                android.util.Log.d("StartupRiskScreen", "No match found for risk: ${issue.name}")
+            }
         }
     }
+    android.util.Log.d("StartupRiskScreen", "Generated ${messages.size} warning messages")
     return messages
 }
 
 private fun displayDoNotLaunchMessages(issues: List<SpecificRisk>): List<RiskMessage> {
+    android.util.Log.d("StartupRiskScreen", "displayDoNotLaunchMessages called with ${issues.size} issues")
     val messages = mutableListOf<RiskMessage>()
 
     issues.forEach { issue ->
+        android.util.Log.d("StartupRiskScreen", "Processing issue: ${issue.name}")
         when (issue.name) {
-            RiskConstants.SPECIFIC_RISK_DEVICE_ROOT_OR_JAILBREAK_NAME -> {
+            "Root/Jail Break" -> {
+                android.util.Log.d("StartupRiskScreen", "Matched Root/Jailbreak risk")
                 messages.add(
                     RiskMessage(
                         title = "Launch Warning",
@@ -90,7 +102,8 @@ private fun displayDoNotLaunchMessages(issues: List<SpecificRisk>): List<RiskMes
                 )
             }
 
-            RiskConstants.SPECIFIC_RISK_NETWORK_DNS_SPOOFING_NAME -> {
+            "DNS Spoofing" -> {
+                android.util.Log.d("StartupRiskScreen", "Matched DNS Spoofing risk")
                 messages.add(
                     RiskMessage(
                         title = "Launch Warning",
@@ -101,7 +114,8 @@ private fun displayDoNotLaunchMessages(issues: List<SpecificRisk>): List<RiskMes
                 )
             }
 
-            RiskConstants.SPECIFIC_RISK_DEVICE_SECURITY_MISCONFIGURATION_LOW_QUALITY_DEVICE_PASSWORD_NAME -> {
+            "Security Misconfiguration Low Quality Device Password" -> {
+                android.util.Log.d("StartupRiskScreen", "Matched Low Quality Password risk")
                 messages.add(
                     RiskMessage(
                         title = "Launch Warning",
@@ -111,8 +125,12 @@ private fun displayDoNotLaunchMessages(issues: List<SpecificRisk>): List<RiskMes
                     )
                 )
             }
+            else -> {
+                android.util.Log.d("StartupRiskScreen", "No match found for risk: ${issue.name}")
+            }
         }
     }
+    android.util.Log.d("StartupRiskScreen", "Generated ${messages.size} do not launch messages")
     return messages
 }
 
@@ -130,15 +148,23 @@ fun RiskModal(
     onDismiss: () -> Unit,
     onSecondaryAction: () -> Unit
 ) {
+    android.util.Log.d("StartupRiskScreen", "RiskModal composable called - isSevere: $isSevere, issues: ${issues.size}")
     val messages =
         if (isSevere) displayDoNotLaunchMessages(issues) else displayWarningMessages(issues)
+    
+    android.util.Log.d("StartupRiskScreen", "Generated messages: ${messages.size}")
 
     if (messages.isNotEmpty()) {
+        android.util.Log.d("StartupRiskScreen", "Creating AlertDialog with first message: ${messages.first()}")
         AlertDialog(
-            onDismissRequest = onDismiss,
+            onDismissRequest = {
+                android.util.Log.d("StartupRiskScreen", "AlertDialog onDismissRequest called")
+                onDismiss()
+            },
             title = {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Warning,
@@ -168,7 +194,10 @@ fun RiskModal(
             },
             confirmButton = {
                 Button(
-                    onClick = onSecondaryAction,
+                    onClick = {
+                        android.util.Log.d("StartupRiskScreen", "AlertDialog confirm button clicked")
+                        onSecondaryAction()
+                    },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isSevere) {
                             MaterialTheme.colorScheme.error
@@ -182,12 +211,17 @@ fun RiskModal(
             },
             dismissButton = {
                 Button(
-                    onClick = onDismiss
+                    onClick = {
+                        android.util.Log.d("StartupRiskScreen", "AlertDialog dismiss button clicked")
+                        onDismiss()
+                    }
                 ) {
                     Text(messages.first().primaryButtonText)
                 }
             }
         )
+    } else {
+        android.util.Log.w("StartupRiskScreen", "No messages generated for modal")
     }
 }
 
@@ -199,64 +233,120 @@ fun StartupRiskDestination(
     val state by viewModel.startupRiskState.collectAsStateWithLifecycle()
     var showModal by remember { mutableStateOf(false) }
     var modalData by remember { mutableStateOf<StartupRiskResultEvent?>(null) }
+    var shouldNavigateToLogin by remember { mutableStateOf(false) }
+    var hasAcknowledgedRisks by remember { mutableStateOf(false) }
 
+    // Run risk checks immediately when screen is launched
+    LaunchedEffect(Unit) {
+        android.util.Log.d("StartupRiskScreen", "Starting initial risk check")
+        viewModel.onEvent(StartupRiskEvent.StartStartUpRiskCheck)
+    }
+
+    // Handle navigation after modal dismissal
+    LaunchedEffect(shouldNavigateToLogin) {
+        if (shouldNavigateToLogin) {
+            android.util.Log.d("StartupRiskScreen", "Navigating to login screen")
+            launchLoginScreen()
+            shouldNavigateToLogin = false
+        }
+    }
+
+    // Handle risk check results
     LaunchedEffect(Unit) {
         viewModel.uiEvent.distinctUntilChanged().collect { event ->
+            android.util.Log.d("StartupRiskScreen", "Received UI event: $event")
             when(event) {
                 StartupRiskResultEvent.RiskFree -> {
-                    launchLoginScreen()
+                    android.util.Log.d("StartupRiskScreen", "No risks detected")
+                    hasAcknowledgedRisks = true
                 }
                 is StartupRiskResultEvent.SevereRisk -> {
+                    android.util.Log.d("StartupRiskScreen", "Severe risks detected: ${event.issues.size}")
+                    event.issues.forEach { risk ->
+                        android.util.Log.d("StartupRiskScreen", "Severe risk: ${risk.name}, status: ${risk.status}")
+                    }
                     modalData = event
                     showModal = true
+                    hasAcknowledgedRisks = false
+                    android.util.Log.d("StartupRiskScreen", "Modal state updated - showModal: $showModal, modalData: $modalData")
                 }
                 is StartupRiskResultEvent.WarningRisk -> {
+                    android.util.Log.d("StartupRiskScreen", "Warning risks detected: ${event.issues.size}")
+                    event.issues.forEach { risk ->
+                        android.util.Log.d("StartupRiskScreen", "Warning risk: ${risk.name}, status: ${risk.status}")
+                    }
                     modalData = event
                     showModal = true
+                    hasAcknowledgedRisks = false
+                    android.util.Log.d("StartupRiskScreen", "Modal state updated - showModal: $showModal, modalData: $modalData")
                 }
             }
         }
     }
 
+    // Show modal for each risk
     if (showModal && modalData != null) {
+        android.util.Log.d("StartupRiskScreen", "Attempting to show modal - showModal: $showModal, modalData: $modalData")
         when (val event = modalData) {
             is StartupRiskResultEvent.SevereRisk -> {
+                android.util.Log.d("StartupRiskScreen", "Showing severe risk modal")
                 RiskModal(
                     isSevere = true,
                     issues = event.issues,
                     onDismiss = {
+                        android.util.Log.d("StartupRiskScreen", "Severe risk modal dismissed")
                         showModal = false
                         modalData = null
+                        hasAcknowledgedRisks = true
                     },
                     onSecondaryAction = {
+                        android.util.Log.d("StartupRiskScreen", "Severe risk modal secondary action")
                         showModal = false
                         modalData = null
-                        launchLoginScreen()
+                        shouldNavigateToLogin = true
                     }
                 )
             }
             is StartupRiskResultEvent.WarningRisk -> {
+                android.util.Log.d("StartupRiskScreen", "Showing warning risk modal")
                 RiskModal(
                     isSevere = false,
                     issues = event.issues,
                     onDismiss = {
+                        android.util.Log.d("StartupRiskScreen", "Warning risk modal dismissed")
                         showModal = false
                         modalData = null
+                        hasAcknowledgedRisks = true
                     },
                     onSecondaryAction = {
+                        android.util.Log.d("StartupRiskScreen", "Warning risk modal secondary action")
                         showModal = false
                         modalData = null
-                        launchLoginScreen()
+                        shouldNavigateToLogin = true
                     }
                 )
             }
-            else -> {}
+            else -> {
+                android.util.Log.d("StartupRiskScreen", "Unknown modal data type")
+            }
         }
     }
 
     StartupRiskScreen(
         state = state,
-        onEvent = viewModel::onEvent,
+        hasAcknowledgedRisks = hasAcknowledgedRisks,
+        onEvent = { event ->
+            android.util.Log.d("StartupRiskScreen", "Received event: $event")
+            when (event) {
+                StartupRiskEvent.StartStartUpRiskCheck -> {
+                    android.util.Log.d("StartupRiskScreen", "Manual risk check triggered")
+                }
+                StartupRiskEvent.ProceedToLogin -> {
+                    android.util.Log.d("StartupRiskScreen", "Proceed to login clicked")
+                    shouldNavigateToLogin = true
+                }
+            }
+        },
     )
 }
 
@@ -268,6 +358,7 @@ fun LaunchedEffect(x0: Unit, content: @Composable () -> Unit) {
 @Composable
 fun StartupRiskScreen(
     state: StartupRiskState,
+    hasAcknowledgedRisks: Boolean,
     onEvent: (StartupRiskEvent) -> Unit
 ) {
     Surface(modifier = Modifier.fillMaxWidth()) {
@@ -278,31 +369,34 @@ fun StartupRiskScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
             if (state.isLoading) {
                 CircularProgressIndicator()
-
                 Text(
-                    text = "Loading Startup Risks"
+                    text = "Checking for security risks..."
                 )
-            }
-
-            if (!state.isLoading) {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        onEvent(StartupRiskEvent.StartStartUpRiskCheck)
-                    },
-                    enabled = state.shouldEnableButton,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+            } else {
+                // Show risk status message
+                val activeRisks = state.risks.filter { it.status != RiskStatus.RISK_STATUS_SAFE }
+                if (activeRisks.isEmpty() || hasAcknowledgedRisks) {
+                    Text(
+                        text = if (activeRisks.isEmpty()) "No startup risks observed" else "",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 16.dp)
                     )
-                ) {
-                    Text("Proceed to login")
+
+                    // Show proceed button when there are no risks or risks have been acknowledged
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onEvent(StartupRiskEvent.ProceedToLogin) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Proceed to login")
+                    }
                 }
             }
-
         }
     }
 }
@@ -315,6 +409,7 @@ private fun StartupRiskScreenRiskFreePreview() {
             state = StartupRiskState(
                 isLoading = false,
             ),
+            hasAcknowledgedRisks = false,
             onEvent = {}
         )
     }
@@ -328,6 +423,7 @@ private fun StartupRiskScreenWarningPreview() {
             state = StartupRiskState(
                 isLoading = false,
             ),
+            hasAcknowledgedRisks = false,
             onEvent = {}
         )
     }
@@ -341,6 +437,7 @@ private fun StartupRiskScreenSeverePreview() {
             state = StartupRiskState(
                 isLoading = false,
             ),
+            hasAcknowledgedRisks = false,
             onEvent = {}
         )
     }
@@ -354,6 +451,7 @@ private fun StartupRiskScreenLoadingPreview() {
             state = StartupRiskState(
                 isLoading = true,
             ),
+            hasAcknowledgedRisks = false,
             onEvent = {}
         )
     }
