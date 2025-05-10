@@ -1,5 +1,6 @@
 package ng.wimika.moneyguardsdkclient.ui.features.login
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlin.coroutines.resume
@@ -123,58 +124,77 @@ class LoginViewModel : ViewModel() {
     private fun getMoneyGuardSession(partnerBankSessionId: String) {
         viewModelScope.launch {
             if (moneyGuardAuthentication == null) {
+                _loginState.update { state ->
+                    state.copy(isLoading = false, errorMessage = "MoneyGuard authentication service is not available")
+                }
                 return@launch
             }
 
-            moneyGuardAuthentication?.register(WIMIKA_BANK, partnerBankSessionId)
-                ?.catch { error ->
-                    _loginState.update { state ->
-                        state.copy(isLoading = false, errorMessage = error.message)
-                    }
-                }
-                ?.collect { result ->
-                    when (result) {
-                        is MoneyGuardResult.Failure -> {
-                            _loginState.update { state ->
-                                state.copy(isLoading = false, errorMessage = result.error.message)
-                            }
+            try {
+                moneyGuardAuthentication?.register(WIMIKA_BANK, partnerBankSessionId)
+                    ?.catch { error ->
+                        Log.e("LoginViewModel", "Error in registration flow", error)
+                        _loginState.update { state ->
+                            state.copy(isLoading = false, errorMessage = error.message)
                         }
-
-                        MoneyGuardResult.Loading -> {}
-
-                        is MoneyGuardResult.Success<SessionResponse> -> {
-                            val session = result.data as? SessionResponse
-
-                            _loginState.update { state ->
-                                state.copy(
-                                    isLoading = false,
-                                    errorMessage = null,
-                                    sessionId = session?.token
-                                )
+                    }
+                    ?.collect { result ->
+                        when (result) {
+                            is MoneyGuardResult.Failure -> {
+                                Log.e("LoginViewModel", "Registration failed: ${result.error.message}")
+                                _loginState.update { state ->
+                                    state.copy(isLoading = false, errorMessage = result.error.message)
+                                }
                             }
 
-                            if (session != null) {
-                                preferenceManager?.saveMoneyGuardToken(session.token)
+                            MoneyGuardResult.Loading -> {
+                                Log.d("LoginViewModel", "Registration in progress")
+                            }
 
-                                try {
-                                    val scanResult = performCredentialChecks(
-                                        session.token,
-                                        loginState.value.email,
-                                        loginState.value.password
+                            is MoneyGuardResult.Success<SessionResponse> -> {
+                                Log.d("LoginViewModel", "Registration successful")
+                                val session = result.data as? SessionResponse
+
+                                _loginState.update { state ->
+                                    state.copy(
+                                        isLoading = false,
+                                        errorMessage = null,
+                                        sessionId = session?.token
                                     )
+                                }
 
-                                    _loginResultEvent.emit(LoginResultEvent.CredentialCheckSuccessful(scanResult.status))
+                                if (session != null) {
+                                    preferenceManager?.saveMoneyGuardToken(session.token)
 
-                                    delay(1000)
+                                    try {
+                                        val scanResult = performCredentialChecks(
+                                            session.token,
+                                            loginState.value.email,
+                                            loginState.value.password
+                                        )
 
-                                    _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
-                                    onLoginSuccess?.invoke()
-                                }catch (e: Error) { }
+                                        _loginResultEvent.emit(LoginResultEvent.CredentialCheckSuccessful(scanResult.status))
 
+                                        delay(1000)
+
+                                        _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
+                                        onLoginSuccess?.invoke()
+                                    } catch (e: Exception) {
+                                        Log.e("LoginViewModel", "Error during credential check", e)
+                                        _loginState.update { state ->
+                                            state.copy(isLoading = false, errorMessage = e.message)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+            } catch (e: Exception) {
+                Log.e("LoginViewModel", "Error in getMoneyGuardSession", e)
+                _loginState.update { state ->
+                    state.copy(isLoading = false, errorMessage = e.message)
                 }
+            }
         }
     }
 
