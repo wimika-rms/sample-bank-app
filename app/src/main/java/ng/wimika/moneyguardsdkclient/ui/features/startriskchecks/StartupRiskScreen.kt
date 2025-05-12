@@ -350,10 +350,6 @@ fun StartupRiskDestination(
     )
 }
 
-@Composable
-fun LaunchedEffect(x0: Unit, content: @Composable () -> Unit) {
-    TODO("Not yet implemented")
-}
 
 @Composable
 fun StartupRiskScreen(

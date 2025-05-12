@@ -30,6 +30,9 @@ class StartupRiskViewModel: ViewModel() {
 
     private val _startupRiskState: MutableStateFlow<StartupRiskState> = MutableStateFlow(StartupRiskState())
     val startupRiskState: StateFlow<StartupRiskState> = _startupRiskState
+        .onStart {
+            checkStartupRisks()
+        }
         .stateIn(viewModelScope,
             SharingStarted.WhileSubscribed(5000),
             StartupRiskState()
@@ -41,7 +44,7 @@ class StartupRiskViewModel: ViewModel() {
     fun onEvent(event: StartupRiskEvent) {
         when (event) {
             StartupRiskEvent.StartStartUpRiskCheck -> {
-                checkStartupRisks()
+                //checkStartupRisks()
             }
             StartupRiskEvent.ProceedToLogin -> {
                 // Navigation is handled by the screen
