@@ -1,10 +1,13 @@
 package ng.wimika.moneyguardsdkclient.ui.features.moneyguard
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import android.widget.Toast
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -19,6 +22,7 @@ sealed class MoneyGuardScreen(val route: String) {
     object CoverageLimitSelection : MoneyGuardScreen("coverage_limit_selection")
     object PolicyOptionSelection : MoneyGuardScreen("policy_option_selection")
     object Summary : MoneyGuardScreen("summary")
+    object Checkout : MoneyGuardScreen("checkout")
 }
 
 @Composable
@@ -30,24 +34,25 @@ fun MoneyGuardNavigation(
 ) {
     var selectedAccounts: List<BankAccount> by remember { mutableStateOf(emptyList()) }
     var selectedPolicyOption: PolicyOption? by remember { mutableStateOf(null) }
+    val context = LocalContext.current
 
     NavHost(
         navController = navController,
-        startDestination = "account_selection"
+        startDestination = MoneyGuardScreen.AccountSelection.route
     ) {
-        composable("account_selection") {
+        composable(MoneyGuardScreen.AccountSelection.route) {
             AccountSelectionScreen(
                 moneyGuardPolicy = moneyGuardPolicy,
                 token = token,
                 onBack = onBack,
                 onContinue = { accounts ->
                     selectedAccounts = accounts
-                    navController.navigate("coverage_limit_selection")
+                    navController.navigate(MoneyGuardScreen.CoverageLimitSelection.route)
                 }
             )
         }
 
-        composable("coverage_limit_selection") {
+        composable(MoneyGuardScreen.CoverageLimitSelection.route) {
             CoverageLimitSelectionScreen(
                 moneyGuardPolicy = moneyGuardPolicy,
                 token = token,
@@ -57,12 +62,12 @@ fun MoneyGuardNavigation(
                         "coverageLimitId",
                         coverageLimitId
                     )
-                    navController.navigate("policy_option_selection")
+                    navController.navigate(MoneyGuardScreen.PolicyOptionSelection.route)
                 }
             )
         }
 
-        composable("policy_option_selection") {
+        composable(MoneyGuardScreen.PolicyOptionSelection.route) {
             val coverageLimitId = navController.previousBackStackEntry
                 ?.savedStateHandle
                 ?.get<Int>("coverageLimitId")
@@ -75,12 +80,12 @@ fun MoneyGuardNavigation(
                 onBack = { navController.popBackStack() },
                 onContinue = { policyOption ->
                     selectedPolicyOption = policyOption
-                    navController.navigate("summary")
+                    navController.navigate(MoneyGuardScreen.Summary.route)
                 }
             )
         }
 
-        composable("summary") {
+        composable(MoneyGuardScreen.Summary.route) {
             if (selectedAccounts.isEmpty() || selectedPolicyOption == null) {
                 navController.popBackStack()
                 return@composable
@@ -91,9 +96,75 @@ fun MoneyGuardNavigation(
                 selectedPolicyOption = selectedPolicyOption!!,
                 onBack = { navController.popBackStack() },
                 onCheckout = {
-                    // Handle checkout
+                    navController.navigate(MoneyGuardScreen.Checkout.route)
                 }
             )
+        }
+
+        composable(MoneyGuardScreen.Checkout.route) {
+            val viewModel: MoneyGuardViewModel = viewModel(
+                factory = MoneyGuardViewModelFactory(moneyGuardPolicy, token)
+            )
+            val isSuccess by viewModel.isSuccess.collectAsState()
+            val successMessage by viewModel.successMessage.collectAsState()
+            val error by viewModel.error.collectAsState()
+
+            Box(modifier = Modifier.fillMaxSize()) {
+                CheckoutScreen(
+                    moneyGuardPolicy = moneyGuardPolicy,
+                    token = token,
+                    onBack = { navController.popBackStack() },
+                    onProceed = { debitAccountId, autoRenew ->
+                        if (selectedPolicyOption != null) {
+                            viewModel.createPolicy(
+                                policyOptionId = selectedPolicyOption!!.id.toString(),
+                                coveredAccountIds = selectedAccounts.map { it.id.toString() },
+                                debitAccountId = debitAccountId,
+                                autoRenew = autoRenew
+                            )
+                        }
+                    }
+                )
+
+                if (isSuccess) {
+                    AlertDialog(
+                        onDismissRequest = { /* Dialog cannot be dismissed */ },
+                        title = { Text("Success") },
+                        text = { Text(successMessage ?: "Policy created successfully!") },
+                        confirmButton = {
+                            Button(
+                                onClick = { onBack() }
+                            ) {
+                                Text("Go to Dashboard")
+                            }
+                        }
+                    )
+                }
+
+                error?.let { errorMessage ->
+                    //hack, fix later
+                    if (errorMessage.contains("Policy created successfully"))
+                    {
+                        AlertDialog(
+                            onDismissRequest = { /* Dialog cannot be dismissed */ },
+                            title = { Text("Success") },
+                            text = { Text(successMessage ?: "Policy created successfully!") },
+                            confirmButton = {
+                                Button(
+                                    onClick = { onBack() }
+                                ) {
+                                    Text("Go to Dashboard")
+                                }
+                            }
+                        )
+                    }
+                    else {
+                        LaunchedEffect(errorMessage) {
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
         }
     }
 } 
