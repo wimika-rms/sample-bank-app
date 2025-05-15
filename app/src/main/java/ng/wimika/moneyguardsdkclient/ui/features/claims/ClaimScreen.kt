@@ -127,47 +127,50 @@ fun ClaimScreen(
         },
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues).padding(16.dp)) {
-            if (state.isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
 
-
-            if (state.errorMessage != null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(state.errorMessage)
-                }
-            }
-
-            if (state.claims.isEmpty() && state.errorMessage == null) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("You don't have any claims")
-                }
-            }
-
-            if (!state.isLoading && state.errorMessage == null) {
-                LazyColumn(modifier = Modifier) {
-
-                    itemsIndexed(state.claims){ index, claim ->
-                        ClaimItemCard(
-                            claim = claim,
-                            modifier = Modifier.padding(16.dp),
-                            onClick = { onClaimItemClick(claim.id) }
-                        )
+            when {
+                state.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
                     }
+                }
 
+                state.errorMessage != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(state.errorMessage)
+                    }
+                }
+
+                state.claims.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("You don't have any claims")
+                    }
+                }
+
+                else -> {
+                    LazyColumn(modifier = Modifier) {
+
+                        itemsIndexed(state.claims){ index, claim ->
+                            ClaimItemCard(
+                                claim = claim,
+                                modifier = Modifier.padding(16.dp),
+                                onClick = { onClaimItemClick(claim.id) }
+                            )
+                        }
+
+                    }
                 }
             }
+
         }
     }
 }
