@@ -2,7 +2,6 @@ package ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims
 
 import android.Manifest
 import android.app.Activity
-import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -48,13 +47,14 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.serialization.Serializable
 import java.io.File
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
 import java.sql.Date
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import ng.wimika.moneyguard_sdk_commons.utils.DateUtils
+import ng.wimika.moneyguardsdkclient.ui.features.claims.widgets.ClaimsPolicyAccountsSelectionCard
+import ng.wimika.moneyguardsdkclient.utils.FileUtils
 
 @Serializable
 object SubmitClaim
@@ -218,6 +218,46 @@ fun SubmitClaimScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Error Message Display
+            state.errorMessage?.let { error ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Error",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
+            //Select Account
+            ClaimsPolicyAccountsSelectionCard(
+                accounts = state.accounts,
+                selectedAccount = state.selectedAccount,
+                onAccountSelected = { account ->
+                    onEvent(SubmitClaimEvent.AccountSelected(account))
+                }
+            )
+
             // Incident Name
             OutlinedTextField(
                 value = state.nameofIncident,
@@ -243,8 +283,9 @@ fun SubmitClaimScreen(
             // Loss Date
             OutlinedTextField(
                 value = state.lossDate?.let {
-                    LocalDate.ofInstant(it.toInstant(), ZoneId.systemDefault())
-                        .format(DateTimeFormatter.ISO_DATE)
+                    DateUtils.formatDate(it)
+//                    LocalDate.ofInstant(it.toInstant(), ZoneId.systemDefault())
+//                        .format(DateTimeFormatter.ISO_DATE)
                 } ?: "",
                 onValueChange = { },
                 label = { Text("Loss Date") },
@@ -324,17 +365,7 @@ fun SubmitClaimScreen(
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Box {
-                                        val uri = Uri.fromFile(file)
-                                        val mimeType = context.contentResolver.getType(uri)
-                                            ?: when {
-                                                file.name.lowercase().endsWith(".jpg") || 
-                                                file.name.lowercase().endsWith(".jpeg") -> "image/jpeg"
-                                                file.name.lowercase().endsWith(".png") -> "image/png"
-                                                file.name.lowercase().endsWith(".gif") -> "image/gif"
-                                                file.name.lowercase().endsWith(".webp") -> "image/webp"
-                                                else -> null
-                                            }
-                                        val isImage = mimeType?.startsWith("image/") == true
+                                        val isImage = FileUtils.isFileAnImage(context, file)
 
                                         if (isImage) {
                                             AsyncImage(
@@ -355,7 +386,6 @@ fun SubmitClaimScreen(
                                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                                     .border(
                                                         width = 1.dp,
-                                                        //color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                                         shape = RoundedCornerShape(8.dp),
                                                         brush = Brush.linearGradient(
                                                             colors = listOf(
@@ -374,8 +404,8 @@ fun SubmitClaimScreen(
                                                 ) {
                                                     Icon(
                                                         imageVector = when {
-                                                            mimeType?.startsWith("video/") == true -> Icons.Default.PlayArrow
-                                                            mimeType?.startsWith("audio/") == true -> Icons.Default.PlayArrow
+                                                            FileUtils.isFileAVideo(context, file) -> Icons.Default.PlayArrow
+                                                            FileUtils.isFileAnAudio(context, file) -> Icons.Default.PlayArrow
                                                             else -> Icons.Default.Info
                                                         },
                                                         contentDescription = "File type icon",
@@ -385,8 +415,8 @@ fun SubmitClaimScreen(
                                                     Spacer(modifier = Modifier.height(4.dp))
                                                     Text(
                                                         text = when {
-                                                            mimeType?.startsWith("video/") == true -> "Video"
-                                                            mimeType?.startsWith("audio/") == true -> "Audio"
+                                                            FileUtils.isFileAVideo(context, file) -> "Video"
+                                                            FileUtils.isFileAnAudio(context, file) == true -> "Audio"
                                                             else -> "Document"
                                                         },
                                                         style = MaterialTheme.typography.bodySmall,
@@ -434,13 +464,14 @@ fun SubmitClaimScreen(
             ) {
 
                 if (state.isLoading) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        color = Color.White,
+                    )
                 }
 
                 if (!state.isLoading) {
                     Text("Submit Claim")
                 }
-
             }
         }
     }

@@ -1,5 +1,6 @@
 package ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims
 
+import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.BankAccount
 import java.io.File
 import java.util.Date
 
@@ -14,7 +15,9 @@ data class SubmitClaimState(
     val showPermissionRationale: Boolean = false,
     val shouldEnableButton: Boolean = false,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val selectedAccount: BankAccount? = null,
+    val accounts: List<BankAccount> = listOf(),
 )
 
 
@@ -31,5 +34,6 @@ sealed class SubmitClaimEvent {
     object HideDatePicker : SubmitClaimEvent()
     object ShowPermissionRationale : SubmitClaimEvent()
     object HidePermissionRationale : SubmitClaimEvent()
+    data class AccountSelected(val account: BankAccount) : SubmitClaimEvent()
 
 }
