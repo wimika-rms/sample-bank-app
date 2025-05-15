@@ -70,5 +70,5 @@ dependencies {
     implementation(libs.okhttp3.logging)
     implementation(libs.gson.converter)
     implementation(libs.android.joda)
-
+    implementation(libs.coil.compose)
 }

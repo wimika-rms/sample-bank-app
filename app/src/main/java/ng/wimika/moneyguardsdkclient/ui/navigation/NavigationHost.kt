@@ -19,6 +19,13 @@ import ng.wimika.moneyguardsdkclient.ui.features.startriskchecks.StartupRiskScre
 import ng.wimika.moneyguardsdkclient.ui.features.utility.Utility
 import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
+import ng.wimika.moneyguardsdkclient.ui.features.claims.Claim
+import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDestination
+import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDetail
+import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDetailsScreen
+import ng.wimika.moneyguardsdkclient.ui.features.claims.MockClaimProvider
+import ng.wimika.moneyguardsdkclient.ui.features.claims.SubmitClaim
+import ng.wimika.moneyguardsdkclient.ui.features.claims.SubmitClaimScreen
 
 
 @Composable
@@ -75,6 +82,9 @@ fun NavigationHost(
                 },
                 onEnableMoneyGuard = {
                     navController.navigate(MoneyGuard)
+                },
+                onClaimClick = {
+                    navController.navigate(Claim)
                 }
             )
         }
@@ -101,6 +111,34 @@ fun NavigationHost(
 
         composable <CheckDebitTransaction>{
             CheckDebitTransactionDestination()
+        }
+
+        composable<Claim>{
+            ClaimDestination(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                addClaimsClick = {
+                    navController.navigate(SubmitClaim)
+                },
+                onClaimItemClick = {id ->
+                    navController.navigate(ClaimDetail(claimId = id))
+                }
+            )
+        }
+
+        composable <ClaimDetail>{
+            ClaimDetailsScreen(
+                claim = MockClaimProvider.getClaimById(2),
+                onBackPressed = { navController.popBackStack() }
+            )
+        }
+
+        composable <SubmitClaim>{
+            SubmitClaimScreen(
+                onSubmit = { request, files -> },
+                 onBackPressed = { navController.popBackStack() }
+            )
         }
     }
 }
