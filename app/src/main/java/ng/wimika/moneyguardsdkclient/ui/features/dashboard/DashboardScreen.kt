@@ -1,7 +1,6 @@
 package ng.wimika.moneyguardsdkclient.ui.features.dashboard
 
 import android.Manifest
-import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -14,10 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Settings
-//import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -34,14 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
-import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
-import ng.wimika.moneyguardsdkclient.LocalMoneyGuardUtility
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.widgets.AccountDetailsCard
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.widgets.QuickActionsCard
-import ng.wimika.moneyguardsdkclient.ui.features.landing.FeatureCategory
 import ng.wimika.moneyguardsdkclient.ui.features.login.LoginViewModel
 import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
 
@@ -54,6 +45,7 @@ fun DashboardDestination(
     onUtilitiesClick: () -> Unit,
     onEnableMoneyGuard: () -> Unit,
     onDebitCheckClick: () -> Unit,
+    onClaimClick: () -> Unit,
     onLogout: () -> Unit
 ) {
     DashboardScreen(
@@ -63,7 +55,8 @@ fun DashboardDestination(
             viewModel.logOut()
             onLogout()
         },
-        onEnableMoneyGuard = onEnableMoneyGuard
+        onEnableMoneyGuard = onEnableMoneyGuard,
+        onClaimClick = onClaimClick
     )
 }
 
@@ -72,6 +65,7 @@ fun DashboardScreen(
     onUtilitiesClick: () -> Unit,
     onEnableMoneyGuard: () -> Unit,
     onDebitCheckClick: () -> Unit,
+    onClaimClick: () -> Unit,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -151,7 +145,8 @@ fun DashboardScreen(
                             )
                         )
                     }
-                }
+                },
+                onClaimsClick = onClaimClick
             )
         }
     }
@@ -164,6 +159,7 @@ private fun DashboardScreenPreview() {
         onDebitCheckClick = {},
         onUtilitiesClick = {},
         onLogout = {},
-        onEnableMoneyGuard = {}
+        onEnableMoneyGuard = {},
+        onClaimClick = {}
     )
 }

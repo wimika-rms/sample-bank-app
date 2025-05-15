@@ -15,6 +15,7 @@ okhttpVersion = "4.12.0"
 retrofitVersion = "2.11.0"
 gsonVersion = "2.13.0"
 androidJoda = "2.13.1"
+coilVersion = "3.2.0"
 
 [libraries]
 android-joda = { module = "net.danlew:android.joda", version.ref = "androidJoda" }
@@ -39,6 +40,8 @@ okhttp3-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor"
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofitVersion" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gsonVersion"}
 gson-converter = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofitVersion"}
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilVersion" }
+coil-network = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coilVersion" }
 
 
 [plugins]
