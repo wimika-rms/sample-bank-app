@@ -24,8 +24,9 @@ import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDestination
 import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDetail
 import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDetailsScreen
 import ng.wimika.moneyguardsdkclient.ui.features.claims.MockClaimProvider
-import ng.wimika.moneyguardsdkclient.ui.features.claims.SubmitClaim
-import ng.wimika.moneyguardsdkclient.ui.features.claims.SubmitClaimScreen
+import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaim
+import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimDestination
+import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimScreen
 
 
 @Composable
@@ -135,8 +136,7 @@ fun NavigationHost(
         }
 
         composable <SubmitClaim>{
-            SubmitClaimScreen(
-                onSubmit = { request, files -> },
+            SubmitClaimDestination(
                  onBackPressed = { navController.popBackStack() }
             )
         }

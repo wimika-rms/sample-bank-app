@@ -1,14 +1,15 @@
-package ng.wimika.moneyguardsdkclient.ui.features.claims
+package ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims
 
 import android.Manifest
+import android.app.Activity
 import android.net.Uri
-import android.webkit.MimeTypeMap
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
@@ -30,57 +31,60 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.serialization.Serializable
+import java.io.File
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
-
-@Serializable
-data class SubmitClaimRequest(
-    val id: Int = 0,
-    val accountId: Long = 0L,
-    val lossDate: String = "",
-    val nameOfIncident: String = "",
-    val lossAmount: Double = 0.0,
-    val statement: String = ""
-)
+import java.sql.Date
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 
 @Serializable
 object SubmitClaim
 
+@Composable
+fun SubmitClaimDestination(
+    onBackPressed: () -> Unit = {},
+    viewModel: SubmitViewModel = viewModel(),
+) {
+    val state by viewModel.submitClaimState.collectAsStateWithLifecycle()
+
+    SubmitClaimScreen(
+        state = state,
+        onEvent = viewModel::onEvent,
+        onBackPressed = onBackPressed
+    )
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SubmitClaimScreen(
-    onBackPressed: () -> Unit = {},
-    onSubmit: (SubmitClaimRequest, List<Any>) -> Unit = { _, _ -> }
+    state: SubmitClaimState,
+    onEvent: (SubmitClaimEvent) -> Unit,
+    onBackPressed: () -> Unit = {}
 ) {
-    var nameOfIncident by remember { mutableStateOf("") }
-    var lossAmount by remember { mutableStateOf("") }
-    var statement by remember { mutableStateOf("") }
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var selectedFiles by remember { mutableStateOf<List<Uri>>(emptyList()) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var showPermissionRationale by remember { mutableStateOf(false) }
-    
     val context = LocalContext.current
-    val activity = context as? android.app.Activity
-    
-    val permissions = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+    val activity = context as? Activity
+
+    val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(
             Manifest.permission.READ_MEDIA_IMAGES,
             Manifest.permission.READ_MEDIA_VIDEO,
@@ -93,7 +97,14 @@ fun SubmitClaimScreen(
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        selectedFiles = uris
+        uris.forEach { uri ->
+            android.util.Log.d("SubmitClaim", "Content URI: $uri")
+            android.util.Log.d("SubmitClaim", "Direct MIME type: ${context.contentResolver.getType(uri)}")
+        }
+        val files = uris.map { uri ->
+            File(uri.path ?: "")
+        }
+        onEvent(SubmitClaimEvent.OnFilesSelected(files))
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -103,19 +114,19 @@ fun SubmitClaimScreen(
         if (allGranted) {
             filePickerLauncher.launch("*/*")
         } else {
-            showPermissionRationale = true
+            onEvent(SubmitClaimEvent.ShowPermissionRationale)
         }
     }
 
-    if (showPermissionRationale) {
+    if (state.showPermissionRationale) {
         AlertDialog(
-            onDismissRequest = { showPermissionRationale = false },
+            onDismissRequest = { onEvent(SubmitClaimEvent.HidePermissionRationale) },
             title = { Text("Permission Required") },
             text = { Text("Storage permission is required to select files for your claim.") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showPermissionRationale = false
+                        onEvent(SubmitClaimEvent.HidePermissionRationale)
                         activity?.let {
                             PermissionUtils.requestPermissions(it, permissions, 100)
                         }
@@ -125,20 +136,20 @@ fun SubmitClaimScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPermissionRationale = false }) {
+                TextButton(onClick = { onEvent(SubmitClaimEvent.HidePermissionRationale) }) {
                     Text("Cancel")
                 }
             }
         )
     }
 
-    if (showDatePicker) {
+    if (state.showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate.toEpochDay() * 24 * 60 * 60 * 1000
+            initialSelectedDateMillis = state.lossDate?.time ?: System.currentTimeMillis()
         )
 
         AlertDialog(
-            onDismissRequest = { showDatePicker = false },
+            onDismissRequest = { onEvent(SubmitClaimEvent.HideDatePicker) },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Column(
@@ -155,7 +166,7 @@ fun SubmitClaimScreen(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 )
-                
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -165,7 +176,7 @@ fun SubmitClaimScreen(
                 ) {
                     TextButton(
                         onClick = {
-                            showDatePicker = false
+                            onEvent(SubmitClaimEvent.HideDatePicker)
                         }
                     ) {
                         Text("Cancel")
@@ -173,9 +184,8 @@ fun SubmitClaimScreen(
                     TextButton(
                         onClick = {
                             datePickerState.selectedDateMillis?.let { millis ->
-                                selectedDate = LocalDate.ofEpochDay(millis / (24 * 60 * 60 * 1000))
+                                onEvent(SubmitClaimEvent.LossDateChanged(Date(millis)))
                             }
-                            showDatePicker = false
                         }
                     ) {
                         Text("OK")
@@ -210,8 +220,8 @@ fun SubmitClaimScreen(
         ) {
             // Incident Name
             OutlinedTextField(
-                value = nameOfIncident,
-                onValueChange = { nameOfIncident = it },
+                value = state.nameofIncident,
+                onValueChange = { onEvent(SubmitClaimEvent.NameOfIncidentChanged(it)) },
                 label = { Text("Name of Incident") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
@@ -219,8 +229,11 @@ fun SubmitClaimScreen(
 
             // Loss Amount
             OutlinedTextField(
-                value = lossAmount,
-                onValueChange = { lossAmount = it },
+                value = state.lossAmount.toString(),
+                onValueChange = {
+                    val amount = it.toDoubleOrNull() ?: 0.0
+                    onEvent(SubmitClaimEvent.LossAmountChanged(amount))
+                },
                 label = { Text("Loss Amount") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -229,13 +242,16 @@ fun SubmitClaimScreen(
 
             // Loss Date
             OutlinedTextField(
-                value = selectedDate.format(DateTimeFormatter.ISO_DATE),
+                value = state.lossDate?.let {
+                    LocalDate.ofInstant(it.toInstant(), ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ISO_DATE)
+                } ?: "",
                 onValueChange = { },
                 label = { Text("Loss Date") },
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
+                    IconButton(onClick = { onEvent(SubmitClaimEvent.ShowDatePicker) }) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
                             contentDescription = "Select Date"
@@ -246,8 +262,8 @@ fun SubmitClaimScreen(
 
             // Statement
             OutlinedTextField(
-                value = statement,
-                onValueChange = { statement = it },
+                value = state.statement,
+                onValueChange = { onEvent(SubmitClaimEvent.StatementChanged(it)) },
                 label = { Text("Statement") },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -268,7 +284,7 @@ fun SubmitClaimScreen(
                         text = "Attachments",
                         style = MaterialTheme.typography.titleMedium
                     )
-                    
+
                     Button(
                         onClick = {
                             if (PermissionUtils.arePermissionsGranted(context, permissions)) {
@@ -287,12 +303,12 @@ fun SubmitClaimScreen(
                         Text("Add Files")
                     }
 
-                    if (selectedFiles.isNotEmpty()) {
+                    if (state.selectedFiles.isNotEmpty()) {
                         Text(
-                            text = "${selectedFiles.size} files selected",
+                            text = "${state.selectedFiles.size} files selected",
                             style = MaterialTheme.typography.bodyMedium
                         )
-                        
+
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -300,7 +316,7 @@ fun SubmitClaimScreen(
                                 .padding(vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            selectedFiles.forEachIndexed { index, file ->
+                            state.selectedFiles.forEachIndexed { index, file ->
                                 Card(
                                     modifier = Modifier
                                         .width(100.dp)
@@ -308,9 +324,18 @@ fun SubmitClaimScreen(
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Box {
-                                        val mimeType = context.contentResolver.getType(file)
+                                        val uri = Uri.fromFile(file)
+                                        val mimeType = context.contentResolver.getType(uri)
+                                            ?: when {
+                                                file.name.lowercase().endsWith(".jpg") || 
+                                                file.name.lowercase().endsWith(".jpeg") -> "image/jpeg"
+                                                file.name.lowercase().endsWith(".png") -> "image/png"
+                                                file.name.lowercase().endsWith(".gif") -> "image/gif"
+                                                file.name.lowercase().endsWith(".webp") -> "image/webp"
+                                                else -> null
+                                            }
                                         val isImage = mimeType?.startsWith("image/") == true
-                                        
+
                                         if (isImage) {
                                             AsyncImage(
                                                 model = ImageRequest.Builder(LocalContext.current)
@@ -327,25 +352,59 @@ fun SubmitClaimScreen(
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxSize()
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                                    .border(
+                                                        width = 1.dp,
+                                                        //color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        brush = Brush.linearGradient(
+                                                            colors = listOf(
+                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                                            ),
+                                                            start = Offset.Zero,
+                                                            end = Offset(20f, 0f)
+                                                        )
+                                                    ),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Icon(
-                                                    imageVector = when {
-                                                        mimeType?.startsWith("video/") == true -> Icons.Default.PlayArrow
-                                                        mimeType?.startsWith("audio/") == true -> Icons.Default.PlayArrow
-                                                        else -> Icons.Default.Info
-                                                    },
-                                                    contentDescription = "File type icon",
-                                                    modifier = Modifier.size(32.dp),
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = when {
+                                                            mimeType?.startsWith("video/") == true -> Icons.Default.PlayArrow
+                                                            mimeType?.startsWith("audio/") == true -> Icons.Default.PlayArrow
+                                                            else -> Icons.Default.Info
+                                                        },
+                                                        contentDescription = "File type icon",
+                                                        modifier = Modifier.size(32.dp),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                    Text(
+                                                        text = when {
+                                                            mimeType?.startsWith("video/") == true -> "Video"
+                                                            mimeType?.startsWith("audio/") == true -> "Audio"
+                                                            else -> "Document"
+                                                        },
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
                                             }
                                         }
-                                        
+
                                         IconButton(
                                             onClick = {
-                                                selectedFiles = selectedFiles.filterIndexed { i, _ -> i != index }
+                                                val updatedFiles =
+                                                    state.selectedFiles.filterIndexed { i, _ -> i != index }
+                                                onEvent(
+                                                    SubmitClaimEvent.OnFilesSelected(
+                                                        updatedFiles
+                                                    )
+                                                )
                                             },
                                             modifier = Modifier
                                                 .align(Alignment.TopEnd)
@@ -368,20 +427,20 @@ fun SubmitClaimScreen(
             // Submit Button
             Button(
                 onClick = {
-                    val request = SubmitClaimRequest(
-                        nameOfIncident = nameOfIncident,
-                        lossAmount = lossAmount.toDoubleOrNull() ?: 0.0,
-                        lossDate = selectedDate.format(DateTimeFormatter.ISO_DATE),
-                        statement = statement
-                    )
-                    onSubmit(request, selectedFiles)
+                    onEvent(SubmitClaimEvent.SubmitClaim)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                enabled = nameOfIncident.isNotBlank() && lossAmount.isNotBlank() && statement.isNotBlank()
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                enabled = state.shouldEnableButton
             ) {
-                Text("Submit Claim")
+
+                if (state.isLoading) {
+                    CircularProgressIndicator()
+                }
+
+                if (!state.isLoading) {
+                    Text("Submit Claim")
+                }
+
             }
         }
     }
@@ -395,7 +454,11 @@ fun SubmitClaimScreenPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            SubmitClaimScreen()
+            SubmitClaimScreen(
+                state = SubmitClaimState(),
+                onEvent = {},
+                onBackPressed = {}
+            )
         }
     }
 }
@@ -410,7 +473,11 @@ fun SubmitClaimScreenDarkPreview() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            SubmitClaimScreen()
+            SubmitClaimScreen(
+                state = SubmitClaimState(),
+                onEvent = {},
+                onBackPressed = {}
+            )
         }
     }
 }
