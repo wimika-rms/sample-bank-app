@@ -26,7 +26,6 @@ import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDetailsScreen
 import ng.wimika.moneyguardsdkclient.ui.features.claims.MockClaimProvider
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaim
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimDestination
-import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimScreen
 
 
 @Composable

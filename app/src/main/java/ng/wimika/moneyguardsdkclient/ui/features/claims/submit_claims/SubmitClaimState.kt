@@ -1,6 +1,5 @@
 package ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims
 
-import ng.wimika.moneyguard_sdk.services.claims.models.Claim
 import java.io.File
 import java.util.Date
 
