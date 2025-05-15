@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimResponse
+import ng.wimika.moneyguard_sdk.services.claims.datasource.model.ClaimResponse
 import java.text.NumberFormat
 import java.util.*
 
