@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransaction
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransactionDestination
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.Dashboard
@@ -21,9 +22,9 @@ import ng.wimika.moneyguardsdkclient.ui.features.utility.UtilityScreen
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
 import ng.wimika.moneyguardsdkclient.ui.features.claims.Claim
 import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDestination
-import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDetail
-import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDetailsScreen
-import ng.wimika.moneyguardsdkclient.ui.features.claims.MockClaimProvider
+import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetail
+import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetailDestination
+import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetailsScreen
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaim
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimDestination
 
@@ -127,9 +128,10 @@ fun NavigationHost(
             )
         }
 
-        composable <ClaimDetail>{
-            ClaimDetailsScreen(
-                claim = MockClaimProvider.getClaimById(2),
+        composable <ClaimDetail>{ backStackEntry ->
+            val claimDetail = backStackEntry.toRoute<ClaimDetail>()
+            ClaimDetailDestination(
+                claimId = claimDetail.claimId,
                 onBackPressed = { navController.popBackStack() }
             )
         }

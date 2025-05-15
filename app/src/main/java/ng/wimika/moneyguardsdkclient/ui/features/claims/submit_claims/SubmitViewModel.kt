@@ -92,7 +92,7 @@ class SubmitViewModel: ViewModel() {
                 }
             }
 
-            is SubmitClaimEvent.SubmitClaim -> {
+            SubmitClaimEvent.SubmitClaim -> {
                 val currentState = _submitClaimState.value
                 val claim = Claim(
                     nameOfIncident = currentState.nameofIncident,
