@@ -1,11 +1,14 @@
 package ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims
 
+import android.content.Context
+import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -15,13 +18,27 @@ import ng.wimika.moneyguard_sdk.services.claims.models.Claim
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
+import ng.wimika.moneyguardsdkclient.utils.FileUtils
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.File
+import okhttp3.RequestBody
+import okio.BufferedSink
+import okio.source
 import java.sql.Date
 
-class SubmitViewModel : ViewModel() {
+class SubmitClaimViewModelFactory(
+    private val context: Context
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(SubmitClaimViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return SubmitClaimViewModel(context) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
+
+class SubmitClaimViewModel (private val context: Context): ViewModel() {
     private val moneyGuardClaim: MoneyGuardClaim? by lazy {
         MoneyGuardClientApp.sdkService?.claim()
     }
@@ -148,38 +165,30 @@ class SubmitViewModel : ViewModel() {
         }
     }
 
-    private fun convertToMultipartBodyParts(files: List<File>): List<MultipartBody.Part> {
-        return files.map { file ->
-            val requestBody = file.asRequestBody("multipart/form-data".toMediaTypeOrNull())
-            MultipartBody.Part.createFormData("attachments", file.name, requestBody)
-        }
-    }
-
-    /*private fun convertToMultipartBodyParts(files: List<File>): List<MultipartBody.Part> {
-        return files.mapNotNull { file ->
+    private fun convertToMultipartBodyParts(files: List<Uri>): List<MultipartBody.Part> {
+        return files.mapNotNull { uri ->
             try {
-                if (!file.exists()) {
-                    Log.e("ClaimsApiService", "File does not exist: ${file.absolutePath}")
-                    return@mapNotNull null
-                }
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val fileName = FileUtils.getFileName(context, uri)
+                val mimeType = FileUtils.getMimeType(context, uri) ?: "application/octet-stream"
+                
+                val requestBody = inputStream?.let {
+                    object : RequestBody() {
+                        override fun contentType() = mimeType.toMediaTypeOrNull()
+                        override fun contentLength() = -1L
+                        override fun writeTo(sink: BufferedSink) {
+                            sink.writeAll(it.source())
+                        }
+                    }
+                } ?: return@mapNotNull null
 
-                val mediaType = when (file.extension.lowercase()) {
-                    "pdf" -> "application/pdf"
-                    "jpg", "jpeg" -> "image/jpeg"
-                    "png" -> "image/png"
-                    "doc", "docx" -> "application/msword"
-                    else -> "application/octet-stream"
-                }
-
-                val requestBody = file.asRequestBody(mediaType.toMediaTypeOrNull())
-                MultipartBody.Part.createFormData("attachments", file.name, requestBody)
+                MultipartBody.Part.createFormData("attachments", fileName, requestBody)
             } catch (e: Exception) {
-                Log.e("ClaimsApiService", "Error creating MultipartBody.Part for file: ${file.absolutePath}", e)
+                Log.e("ClaimsApiService", "Error creating MultipartBody.Part for URI: $uri", e)
                 null
             }
         }
-    }*/
-
+    }
 
     private fun loadPolicyAccounts() {
         val token = preferenceManager?.getMoneyGuardToken() ?: ""
@@ -199,8 +208,7 @@ class SubmitViewModel : ViewModel() {
         }
     }
 
-
-    private fun submitClaim(claim: Claim, attachments: List<File>) {
+    private fun submitClaim(claim: Claim, attachments: List<Uri>) {
         _submitClaimState.update { currentState ->
             currentState.copy(isLoading = true)
         }

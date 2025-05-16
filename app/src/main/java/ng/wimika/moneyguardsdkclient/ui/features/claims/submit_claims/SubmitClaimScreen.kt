@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,13 +45,15 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.serialization.Serializable
-import java.io.File
 import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
 import java.sql.Date
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import ng.wimika.moneyguard_sdk_commons.utils.DateUtils
+import ng.wimika.moneyguardsdkclient.R
 import ng.wimika.moneyguardsdkclient.ui.features.claims.widgets.ClaimsPolicyAccountsSelectionCard
 import ng.wimika.moneyguardsdkclient.utils.FileUtils
 
@@ -62,7 +63,11 @@ object SubmitClaim
 @Composable
 fun SubmitClaimDestination(
     onBackPressed: () -> Unit = {},
-    viewModel: SubmitViewModel = viewModel(),
+    viewModel: SubmitClaimViewModel = viewModel(
+        factory = SubmitClaimViewModelFactory(
+            context = LocalContext.current
+        )
+    ),
 ) {
     val state by viewModel.submitClaimState.collectAsStateWithLifecycle()
 
@@ -97,14 +102,7 @@ fun SubmitClaimScreen(
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
-        uris.forEach { uri ->
-            android.util.Log.d("SubmitClaim", "Content URI: $uri")
-            android.util.Log.d("SubmitClaim", "Direct MIME type: ${context.contentResolver.getType(uri)}")
-        }
-        val files = uris.map { uri ->
-            File(uri.path ?: "")
-        }
-        onEvent(SubmitClaimEvent.OnFilesSelected(files))
+        onEvent(SubmitClaimEvent.OnFilesSelected(uris))
     }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -284,8 +282,6 @@ fun SubmitClaimScreen(
             OutlinedTextField(
                 value = state.lossDate?.let {
                     DateUtils.formatDate(it)
-//                    LocalDate.ofInstant(it.toInstant(), ZoneId.systemDefault())
-//                        .format(DateTimeFormatter.ISO_DATE)
                 } ?: "",
                 onValueChange = { },
                 label = { Text("Loss Date") },
@@ -357,7 +353,7 @@ fun SubmitClaimScreen(
                                 .padding(vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            state.selectedFiles.forEachIndexed { index, file ->
+                            state.selectedFiles.forEachIndexed { index, uri ->
                                 Card(
                                     modifier = Modifier
                                         .width(100.dp)
@@ -365,12 +361,12 @@ fun SubmitClaimScreen(
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Box {
-                                        val isImage = FileUtils.isFileAnImage(context, file)
+                                        val isImage = FileUtils.isFileAnImage(context, uri)
 
                                         if (isImage) {
                                             AsyncImage(
                                                 model = ImageRequest.Builder(LocalContext.current)
-                                                    .data(file)
+                                                    .data(uri)
                                                     .crossfade(true)
                                                     .build(),
                                                 contentDescription = "Selected file $index",
@@ -389,8 +385,12 @@ fun SubmitClaimScreen(
                                                         shape = RoundedCornerShape(8.dp),
                                                         brush = Brush.linearGradient(
                                                             colors = listOf(
-                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                                    alpha = 0.5f
+                                                                ),
+                                                                MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                                    alpha = 0.5f
+                                                                )
                                                             ),
                                                             start = Offset.Zero,
                                                             end = Offset(20f, 0f)
@@ -403,10 +403,10 @@ fun SubmitClaimScreen(
                                                     verticalArrangement = Arrangement.Center
                                                 ) {
                                                     Icon(
-                                                        imageVector = when {
-                                                            FileUtils.isFileAVideo(context, file) -> Icons.Default.PlayArrow
-                                                            FileUtils.isFileAnAudio(context, file) -> Icons.Default.PlayArrow
-                                                            else -> Icons.Default.Info
+                                                        painter = when {
+                                                            FileUtils.isFileAVideo(context, uri) -> painterResource(id = R.drawable.ic_video)
+                                                            FileUtils.isFileAnAudio(context, uri) -> painterResource(id = R.drawable.ic_sound)
+                                                            else -> painterResource(id = R.drawable.ic_file)
                                                         },
                                                         contentDescription = "File type icon",
                                                         modifier = Modifier.size(32.dp),
@@ -415,8 +415,10 @@ fun SubmitClaimScreen(
                                                     Spacer(modifier = Modifier.height(4.dp))
                                                     Text(
                                                         text = when {
-                                                            FileUtils.isFileAVideo(context, file) -> "Video"
-                                                            FileUtils.isFileAnAudio(context, file) == true -> "Audio"
+                                                            FileUtils.isFileAVideo(context, uri) -> stringResource(
+                                                                R.string.video
+                                                            )
+                                                            FileUtils.isFileAnAudio(context, uri) -> "Audio"
                                                             else -> "Document"
                                                         },
                                                         style = MaterialTheme.typography.bodySmall,
@@ -459,7 +461,9 @@ fun SubmitClaimScreen(
                 onClick = {
                     onEvent(SubmitClaimEvent.SubmitClaim)
                 },
-                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
                 enabled = state.shouldEnableButton
             ) {
 

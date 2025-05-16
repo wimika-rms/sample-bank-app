@@ -44,7 +44,9 @@ fun ClaimsPolicyAccountsSelectionCard(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         ) {
             Text(
                 text = "Select Account",
@@ -53,9 +55,15 @@ fun ClaimsPolicyAccountsSelectionCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Box {
+            Box(
+                modifier = Modifier.clickable(
+                    role = Role.Button,
+                    onClick = { expanded = true }
+                )
+            ) {
                 OutlinedTextField(
-                    value = selectedAccount?.let { "${it.bank} - ${it.number} (${it.type})" } ?: "Select an account",
+                    value = selectedAccount?.let { "${it.bank} - ${it.number} (${it.type})" }
+                        ?: "Select an account",
                     onValueChange = {},
                     readOnly = true,
                     trailingIcon = {
@@ -66,10 +74,12 @@ fun ClaimsPolicyAccountsSelectionCard(
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().clickable(
-                        role = Role.Button,
-                        onClick = {expanded = true }
-                    )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            role = Role.Button,
+                            onClick = { expanded = true }
+                        )
                 )
 
                 DropdownMenu(
@@ -79,7 +89,7 @@ fun ClaimsPolicyAccountsSelectionCard(
                 ) {
                     accounts.forEachIndexed { index, account ->
                         DropdownMenuItem(
-                            text = { 
+                            text = {
                                 Text("${account.bank} - ${account.number} (${account.type})")
                             },
                             onClick = {
@@ -88,8 +98,8 @@ fun ClaimsPolicyAccountsSelectionCard(
                             },
                             colors = MenuDefaults.itemColors(
                                 textColor = if (account == selectedAccount)
-                                    MaterialTheme.colorScheme.primary 
-                                else 
+                                    MaterialTheme.colorScheme.primary
+                                else
                                     MaterialTheme.colorScheme.onSurface
                             )
                         )

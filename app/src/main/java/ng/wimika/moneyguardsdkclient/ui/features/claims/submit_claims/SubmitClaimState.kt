@@ -1,7 +1,7 @@
 package ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims
 
+import android.net.Uri
 import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.BankAccount
-import java.io.File
 import java.util.Date
 
 
@@ -10,7 +10,7 @@ data class SubmitClaimState(
     val lossAmount: Double = 0.0,
     val lossDate: Date? = null,
     val statement: String = "",
-    val selectedFiles: List<File> = emptyList(),
+    val selectedFiles: List<Uri> = emptyList(),
     val showDatePicker: Boolean = false,
     val showPermissionRationale: Boolean = false,
     val shouldEnableButton: Boolean = false,
@@ -29,7 +29,7 @@ sealed class SubmitClaimEvent {
     data class LossAmountChanged(val value: Double) : SubmitClaimEvent()
     data class LossDateChanged(val value: Date) : SubmitClaimEvent()
     data class StatementChanged(val value: String) : SubmitClaimEvent()
-    data class OnFilesSelected(val files: List<File>) : SubmitClaimEvent()
+    data class OnFilesSelected(val files: List<Uri>) : SubmitClaimEvent()
     object ShowDatePicker : SubmitClaimEvent()
     object HideDatePicker : SubmitClaimEvent()
     object ShowPermissionRationale : SubmitClaimEvent()

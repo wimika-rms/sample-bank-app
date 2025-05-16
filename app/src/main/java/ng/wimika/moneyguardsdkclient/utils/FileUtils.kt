@@ -2,66 +2,66 @@ package ng.wimika.moneyguardsdkclient.utils
 
 import android.content.Context
 import android.net.Uri
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.webkit.MimeTypeMap
 import androidx.core.content.FileProvider
 import java.io.File
-
+import java.io.FileOutputStream
 
 
 object FileUtils {
-    fun isFileAnImage(context: Context, file: File): Boolean  {
-        val mimeType = getMimeType2(context, Uri.fromFile(file))
+    fun isFileAnImage(context: Context, uri: Uri): Boolean {
+        val mimeType = getMimeType(context, uri)
         return mimeType?.startsWith("image/") == true
     }
 
-    fun isFileAVideo(context: Context, file: File): Boolean  {
-        val mimeType = getMimeType2(context, Uri.fromFile(file))
+    fun isFileAVideo(context: Context, uri: Uri): Boolean {
+        val mimeType = getMimeType(context, uri)
         return mimeType?.startsWith("video/") == true
     }
 
-    fun isFileAnAudio(context: Context, file: File): Boolean  {
-        val mimeType = getMimeType2(context, Uri.fromFile(file))
+    fun isFileAnAudio(context: Context, uri: Uri): Boolean {
+        val mimeType = getMimeType(context, uri)
         return mimeType?.startsWith("audio/") == true
     }
 
 
-    fun getMimeType(context: Context, file: File): String? {
-        val fileUri = FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.fileprovider",
-            file
-        )
-
-        val mimeType = context.contentResolver.getType(fileUri)
-            ?: when {
-                file.name.lowercase().endsWith(".jpg") ||
-                        file.name.lowercase().endsWith(".jpeg") -> "image/jpeg"
-                file.name.lowercase().endsWith(".png") -> "image/png"
-                file.name.lowercase().endsWith(".gif") -> "image/gif"
-                file.name.lowercase().endsWith(".webp") -> "image/webp"
-                else -> null
+    fun getMimeType(context: Context, uri: Uri): String? {
+        return when (uri.scheme) {
+            "content" -> context.contentResolver.getType(uri)
+            "file" -> {
+                val extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
             }
-
-        return mimeType
+            else -> null
+        }
     }
 
+    fun getFileName(context: Context, uri: Uri): String {
+        var result: String? = null
 
-    fun getMimeType2(context: Context, uri: Uri): String? {
-        return context.contentResolver.getType(uri) ?: run {
-            val fileExtension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
-            if (!fileExtension.isNullOrEmpty()) {
-                MimeTypeMap.getSingleton().getMimeTypeFromExtension(fileExtension)
-            } else {
-                when {
-                    uri.toString().lowercase().contains(".jpg") ||
-                            uri.toString().lowercase().contains(".jpeg") -> "image/jpeg"
-                    uri.toString().lowercase().contains(".png") -> "image/png"
-                    uri.toString().lowercase().contains(".gif") -> "image/gif"
-                    uri.toString().lowercase().contains(".webp") -> "image/webp"
-                    else -> null
+        if (uri.scheme == "content") {
+            val cursor = context.contentResolver.query(uri, null, null, null, null)
+            cursor?.use {
+                if (it.moveToFirst()) {
+                    val columnIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (columnIndex != -1) {
+                        result = it.getString(columnIndex)
+                    }
                 }
             }
         }
+
+        if (result == null) {
+            result = uri.path
+            val cut = result?.lastIndexOf('/')
+            if (cut != -1) {
+                result = result?.substring(cut!! + 1)
+            }
+        }
+
+        return result ?: "unknown_file_${System.currentTimeMillis()}"
     }
 }
 
