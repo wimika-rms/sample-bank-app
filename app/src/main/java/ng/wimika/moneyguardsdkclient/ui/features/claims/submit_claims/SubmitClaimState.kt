@@ -6,7 +6,7 @@ import java.util.Date
 
 
 data class SubmitClaimState(
-    val nameofIncident: String = "",
+    val nameofIncident: String? = null,
     val lossAmount: Double = 0.0,
     val lossDate: Date? = null,
     val statement: String = "",
@@ -18,6 +18,7 @@ data class SubmitClaimState(
     val errorMessage: String? = null,
     val selectedAccount: BankAccount? = null,
     val accounts: List<BankAccount> = listOf(),
+    val incidentNames: List<String> = listOf(),
 )
 
 

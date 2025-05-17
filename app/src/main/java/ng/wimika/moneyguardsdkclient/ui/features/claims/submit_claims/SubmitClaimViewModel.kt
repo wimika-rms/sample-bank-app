@@ -38,7 +38,7 @@ class SubmitClaimViewModelFactory(
     }
 }
 
-class SubmitClaimViewModel (private val context: Context): ViewModel() {
+class SubmitClaimViewModel(private val context: Context) : ViewModel() {
     private val moneyGuardClaim: MoneyGuardClaim? by lazy {
         MoneyGuardClientApp.sdkService?.claim()
     }
@@ -56,6 +56,7 @@ class SubmitClaimViewModel (private val context: Context): ViewModel() {
     val submitClaimState: StateFlow<SubmitClaimState> = _submitClaimState
         .onStart {
             loadPolicyAccounts()
+            loadIncidentNames()
         }
         .stateIn(
             viewModelScope,
@@ -131,7 +132,7 @@ class SubmitClaimViewModel (private val context: Context): ViewModel() {
             SubmitClaimEvent.SubmitClaim -> {
                 val currentState = _submitClaimState.value
                 val claim = Claim(
-                    nameOfIncident = currentState.nameofIncident,
+                    nameOfIncident = currentState.nameofIncident ?: "",
                     lossAmount = currentState.lossAmount,
                     lossDate = currentState.lossDate ?: Date(System.currentTimeMillis()),
                     statement = currentState.statement,
@@ -154,7 +155,7 @@ class SubmitClaimViewModel (private val context: Context): ViewModel() {
     private fun validateForm() {
         val currentState = _submitClaimState.value
 
-        val isInputValid = currentState.nameofIncident.isNotBlank() &&
+        val isInputValid = currentState.nameofIncident?.isNotBlank() == true &&
                 currentState.lossAmount > 0.0 &&
                 currentState.statement.isNotBlank() &&
                 currentState.lossDate != null &&
@@ -171,7 +172,7 @@ class SubmitClaimViewModel (private val context: Context): ViewModel() {
                 val inputStream = context.contentResolver.openInputStream(uri)
                 val fileName = FileUtils.getFileName(context, uri)
                 val mimeType = FileUtils.getMimeType(context, uri) ?: "application/octet-stream"
-                
+
                 val requestBody = inputStream?.let {
                     object : RequestBody() {
                         override fun contentType() = mimeType.toMediaTypeOrNull()
@@ -203,6 +204,24 @@ class SubmitClaimViewModel (private val context: Context): ViewModel() {
                 onFailure = { exception ->
                     //swallow the error for now.
                     exception.printStackTrace()
+                }
+            )
+        }
+    }
+
+    private fun loadIncidentNames() {
+        val token = preferenceManager?.getMoneyGuardToken() ?: ""
+
+        viewModelScope.launch {
+            moneyGuardClaim?.getIncidentNames(
+                token,
+                onSuccess = { names ->
+                    _submitClaimState.update { currentState ->
+                        currentState.copy(incidentNames = names)
+                    }
+                },
+                onFailure = { error ->
+                    error.printStackTrace()
                 }
             )
         }

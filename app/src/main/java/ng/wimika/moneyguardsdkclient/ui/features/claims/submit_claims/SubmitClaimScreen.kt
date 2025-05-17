@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import ng.wimika.moneyguard_sdk_commons.utils.DateUtils
 import ng.wimika.moneyguardsdkclient.R
 import ng.wimika.moneyguardsdkclient.ui.features.claims.widgets.ClaimsPolicyAccountsSelectionCard
+import ng.wimika.moneyguardsdkclient.ui.features.claims.widgets.ClaimsIncidentNameSelectionCard
 import ng.wimika.moneyguardsdkclient.utils.FileUtils
 
 @Serializable
@@ -257,12 +258,12 @@ fun SubmitClaimScreen(
             )
 
             // Incident Name
-            OutlinedTextField(
-                value = state.nameofIncident,
-                onValueChange = { onEvent(SubmitClaimEvent.NameOfIncidentChanged(it)) },
-                label = { Text("Name of Incident") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+            ClaimsIncidentNameSelectionCard(
+                incidentNames = state.incidentNames,
+                selectedIncidentName = state.nameofIncident,
+                onIncidentNameSelected = { incidentName ->
+                    onEvent(SubmitClaimEvent.NameOfIncidentChanged(incidentName))
+                }
             )
 
             // Loss Amount
