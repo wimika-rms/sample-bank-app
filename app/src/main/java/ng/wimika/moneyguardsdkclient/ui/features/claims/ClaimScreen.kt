@@ -34,6 +34,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.runtime.setValue
+import ng.wimika.moneyguardsdkclient.ui.features.claims.widgets.ClaimStatusFilterDropdown
 
 
 @Serializable
@@ -84,34 +85,12 @@ fun ClaimScreen(
                     }
                 },
                 actions = {
-                    Box {
-                        IconButton(onClick = { showFilterMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Filled.Menu,
-                                contentDescription = "Filter Claims"
-                            )
+                    ClaimStatusFilterDropdown(
+                        value = state.status,
+                        onChange = { newFilter ->
+                            onEvent(ClaimEvent.OnFilterSelected(newFilter))
                         }
-                        DropdownMenu(
-                            expanded = showFilterMenu,
-                            onDismissRequest = { showFilterMenu = false }
-                        ) {
-                            ClaimStatus.entries.forEach { status ->
-                                DropdownMenuItem(
-                                    text = { Text(status.name) },
-                                    onClick = {
-                                        onEvent(ClaimEvent.OnFilterSelected(status))
-                                        showFilterMenu = false
-                                    },
-                                    colors = MenuDefaults.itemColors(
-                                        textColor = if (state.status == status) 
-                                            MaterialTheme.colorScheme.primary 
-                                        else 
-                                            MaterialTheme.colorScheme.onSurface
-                                    )
-                                )
-                            }
-                        }
-                    }
+                    )
                 }
             )
         },
