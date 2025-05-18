@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ng.wimika.moneyguard_sdk.services.claims.MoneyGuardClaim
 import ng.wimika.moneyguard_sdk.services.claims.models.Claim
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
@@ -228,40 +230,47 @@ class SubmitClaimViewModel(private val context: Context) : ViewModel() {
     }
 
     private fun submitClaim(claim: Claim, attachments: List<Uri>) {
-        _submitClaimState.update { currentState ->
-            currentState.copy(isLoading = true)
-        }
 
-        try {
-            val multipartAttachments = convertToMultipartBodyParts(attachments)
-            moneyGuardClaim?.submitClaim(
-                sessionToken = preferenceManager?.getMoneyGuardToken() ?: "",
-                claim = claim,
-                attachments = multipartAttachments,
-                onSuccess = { response ->
-                    _submitClaimState.update { currentState ->
-                        currentState.copy(
-                            isLoading = false,
-                            errorMessage = null
-                        )
-                    }
-                },
-                onFailure = { error ->
-                    _submitClaimState.update { currentState ->
-                        currentState.copy(
-                            isLoading = false,
-                            errorMessage = error.message
-                        )
-                    }
-                }
-            )
-        } catch (e: Exception) {
+        viewModelScope.launch {
             _submitClaimState.update { currentState ->
-                currentState.copy(
-                    isLoading = false,
-                    errorMessage = e.message
+                currentState.copy(isLoading = true)
+            }
+
+            val multipartAttachments = withContext (Dispatchers.Default) {
+                convertToMultipartBodyParts(attachments)
+            }
+
+            try {
+                moneyGuardClaim?.submitClaim(
+                    sessionToken = preferenceManager?.getMoneyGuardToken() ?: "",
+                    claim = claim,
+                    attachments = multipartAttachments,
+                    onSuccess = { response ->
+                        _submitClaimState.update { currentState ->
+                            currentState.copy(
+                                isLoading = false,
+                                errorMessage = null
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        _submitClaimState.update { currentState ->
+                            currentState.copy(
+                                isLoading = false,
+                                errorMessage = error.message
+                            )
+                        }
+                    }
                 )
+            } catch (e: Exception) {
+                _submitClaimState.update { currentState ->
+                    currentState.copy(
+                        isLoading = false,
+                        errorMessage = e.message
+                    )
+                }
             }
         }
+
     }
 }
