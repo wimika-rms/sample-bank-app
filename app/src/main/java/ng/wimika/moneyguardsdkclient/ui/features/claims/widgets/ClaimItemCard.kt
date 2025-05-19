@@ -108,9 +108,13 @@ fun ClaimItemCard(
 @Composable
 private fun StatusChip(status: String) {
     val (backgroundColor, textColor) = when (status.lowercase()) {
-        "approved" -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
-        "pending" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
+        "submitted" -> MaterialTheme.colorScheme.tertiary to MaterialTheme.colorScheme.onTertiary
+        "underreview" -> MaterialTheme.colorScheme.secondary to MaterialTheme.colorScheme.onSecondary
+        "verified" -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
         "rejected" -> MaterialTheme.colorScheme.error to MaterialTheme.colorScheme.onError
+        "processingpayment" -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
+        "paymentsent" -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
+        "reimbursementcomplete" -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
         else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
     }
     
@@ -119,7 +123,7 @@ private fun StatusChip(status: String) {
         shape = MaterialTheme.shapes.small
     ) {
         Text(
-            text = status,
+            text = status.replace(Regex("([a-z])([A-Z])"), "$1 $2"),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
             color = textColor
