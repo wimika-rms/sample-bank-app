@@ -22,8 +22,7 @@ fun ClaimItemCard(
 ) {
 
     Card(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         onClick = onClick
     ) {
         Column(

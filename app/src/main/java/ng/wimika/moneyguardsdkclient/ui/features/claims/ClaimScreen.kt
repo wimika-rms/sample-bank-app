@@ -70,8 +70,6 @@ fun ClaimScreen(
     state: ClaimListState,
     onEvent: (ClaimEvent) -> Unit,
 ) {
-    var showFilterMenu by remember { mutableStateOf(false) }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -141,7 +139,7 @@ fun ClaimScreen(
                         itemsIndexed(state.claims){ index, claim ->
                             ClaimItemCard(
                                 claim = claim,
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(vertical = 8.dp),
                                 onClick = { onClaimItemClick(claim.id) }
                             )
                         }
