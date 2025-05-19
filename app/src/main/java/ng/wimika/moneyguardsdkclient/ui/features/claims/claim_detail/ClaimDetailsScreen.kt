@@ -21,6 +21,8 @@ import ng.wimika.moneyguard_sdk.services.claims.datasource.model.Note
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.runtime.getValue
+import ng.wimika.moneyguardsdkclient.utils.DateUtils
+import org.joda.time.DateTime
 
 @Serializable
 data class ClaimDetail(
@@ -126,7 +128,7 @@ private fun ClaimDetailsContent(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = claim.status,
+                    text = claim.status ?: "",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -152,11 +154,11 @@ private fun ClaimDetailsContent(
                 
                 InfoRow("Claim ID", claim.id.toString())
                 InfoRow("Policy ID", claim.policyId.toString())
-                InfoRow("Name", claim.name)
-                InfoRow("Brief", claim.brief)
+                InfoRow("Name", claim.name ?: claim.natureOfIncident)
+                InfoRow("Brief", claim.brief ?: "")
                 InfoRow("Loss Amount", "₦${claim.lossAmount}")
                 InfoRow("Nature of Incident", claim.natureOfIncident)
-                InfoRow("Statement", claim.statement)
+                InfoRow("Statement", claim.statement ?: "")
             }
         }
 
@@ -197,8 +199,8 @@ private fun ClaimDetailsContent(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                InfoRow("Bank", claim.bank)
-                InfoRow("Account Number", claim.account)
+                InfoRow("Bank", claim.bank ?: "")
+                InfoRow("Account Number", claim.account ?: "")
                 InfoRow("Account ID", claim.accountId.toString())
             }
         }
@@ -229,7 +231,7 @@ private fun ClaimDetailsContent(
         }
 
         // Feedback Section
-        if (claim.feedback.isNotEmpty()) {
+        if (claim.feedback?.isNotEmpty() == true) {
             Spacer(modifier = Modifier.height(16.dp))
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -244,7 +246,7 @@ private fun ClaimDetailsContent(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = claim.feedback,
+                        text = claim.feedback ?: "",
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -311,15 +313,8 @@ private fun NoteItem(note: Note) {
     }
 }
 
-private fun formatDate(dateString: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-        val date = inputFormat.parse(dateString)
-        date?.let { outputFormat.format(it) } ?: dateString
-    } catch (e: Exception) {
-        dateString
-    }
+private fun formatDate(dateTime: String): String {
+    return DateUtils.formatDate(dateTime)
 }
 
 @Preview(showBackground = true, showSystemUi = true)
@@ -347,7 +342,7 @@ fun ClaimDetailsScreenWithNotesPreview() {
                     policyId = 1,
                     name = "Test Claim",
                     brief = "Test brief description",
-                    lossAmount = 1000,
+                    lossAmount = 1000.0,
                     natureOfIncident = "Test incident",
                     statement = "Test statement",
                     lossDate = "2024-03-20T00:00:00.000Z",
@@ -383,7 +378,7 @@ fun ClaimDetailsScreenWithFeedbackPreview() {
                     policyId = 1,
                     name = "Test Claim",
                     brief = "Test brief description",
-                    lossAmount = 1000,
+                    lossAmount = 1000.0,
                     natureOfIncident = "Test incident",
                     statement = "Test statement",
                     lossDate = "2024-03-20T00:00:00.000Z",

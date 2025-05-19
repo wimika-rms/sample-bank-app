@@ -53,7 +53,7 @@ class ClaimViewModel : ViewModel() {
                 preferenceManager?.getMoneyGuardToken() ?: "",
                 from = Date(System.currentTimeMillis() - 365L * 24 * 60 * 60 * 1000), // 1year ago
                 to = Date(System.currentTimeMillis()),
-                bank = "101",
+                bank = "",
                 claimStatus = _claimState.value.status,
                 onSuccess = { response ->
                     _claimState.update { currentState ->

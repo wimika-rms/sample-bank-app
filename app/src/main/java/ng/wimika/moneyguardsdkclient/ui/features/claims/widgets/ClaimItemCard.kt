@@ -9,6 +9,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ng.wimika.moneyguard_sdk.services.claims.datasource.model.ClaimResponse
+import ng.wimika.moneyguardsdkclient.utils.DateUtils
+import org.joda.time.DateTime
 import java.text.NumberFormat
 import java.util.*
 
@@ -18,6 +20,7 @@ fun ClaimItemCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
+
     Card(
         modifier = modifier
             .fillMaxWidth(),
@@ -35,18 +38,18 @@ fun ClaimItemCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = claim.name,
+                    text = claim.name ?: claim.natureOfIncident,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                StatusChip(status = claim.status)
+                StatusChip(status = claim.status ?: "")
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
             
             // Brief description
             Text(
-                text = claim.brief,
+                text = claim.brief ?: "",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -79,7 +82,7 @@ fun ClaimItemCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = claim.lossDate,
+                        text = DateUtils.formatDate(claim.lossDate),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -124,7 +127,7 @@ private fun StatusChip(status: String) {
     }
 }
 
-private fun formatCurrency(amount: Int): String {
+private fun formatCurrency(amount: Double): String {
     val formatter = NumberFormat.getCurrencyInstance(Locale("en", "NG"))
     return formatter.format(amount)
 }
@@ -139,7 +142,7 @@ fun ClaimItemCardPreview() {
         reportDate = "2024-03-16",
         name = "Phone Theft Claim",
         brief = "iPhone 13 Pro Max was stolen during a robbery incident",
-        lossAmount = 750000,
+        lossAmount = 750000.0,
         status = "Pending",
         statement = "The incident occurred at 8:30 PM",
         userId = "user123",
@@ -169,7 +172,7 @@ fun ClaimItemCardApprovedPreview() {
         reportDate = "2024-03-11",
         name = "Laptop Damage Claim",
         brief = "MacBook Pro screen damaged due to water spillage",
-        lossAmount = 450000,
+        lossAmount = 450000.0,
         status = "Approved",
         statement = "Accidental damage occurred while working",
         userId = "user124",
@@ -199,7 +202,7 @@ fun ClaimItemCardRejectedPreview() {
         reportDate = "2024-03-06",
         name = "Watch Loss Claim",
         brief = "Rolex watch lost during travel",
-        lossAmount = 1200000,
+        lossAmount = 1200000.0,
         status = "Rejected",
         statement = "Watch was not properly secured",
         userId = "user125",
