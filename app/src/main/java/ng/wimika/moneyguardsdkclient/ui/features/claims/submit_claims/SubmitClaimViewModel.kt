@@ -249,7 +249,8 @@ class SubmitClaimViewModel(private val context: Context) : ViewModel() {
                         _submitClaimState.update { currentState ->
                             currentState.copy(
                                 isLoading = false,
-                                errorMessage = null
+                                errorMessage = null,
+                                isSuccessful = true
                             )
                         }
                     },

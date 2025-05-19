@@ -16,6 +16,7 @@ data class SubmitClaimState(
     val shouldEnableButton: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
+    val isSuccessful: Boolean = false,
     val selectedAccount: BankAccount? = null,
     val accounts: List<BankAccount> = listOf(),
     val incidentNames: List<String> = listOf(),

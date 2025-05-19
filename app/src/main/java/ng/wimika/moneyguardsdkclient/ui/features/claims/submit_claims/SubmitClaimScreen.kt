@@ -3,6 +3,7 @@ package ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims
 import android.Manifest
 import android.app.Activity
 import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -115,6 +116,10 @@ fun SubmitClaimScreen(
         } else {
             onEvent(SubmitClaimEvent.ShowPermissionRationale)
         }
+    }
+
+    if (state.isSuccessful) {
+        Toast.makeText(context, "Claim submitted successfully", Toast.LENGTH_SHORT).show()
     }
 
     if (state.showPermissionRationale) {
