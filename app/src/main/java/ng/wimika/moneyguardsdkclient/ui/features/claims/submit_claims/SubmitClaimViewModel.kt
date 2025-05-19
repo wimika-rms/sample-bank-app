@@ -246,12 +246,8 @@ class SubmitClaimViewModel(private val context: Context) : ViewModel() {
                     claim = claim,
                     attachments = multipartAttachments,
                     onSuccess = { response ->
-                        _submitClaimState.update { currentState ->
-                            currentState.copy(
-                                isLoading = false,
-                                errorMessage = null,
-                                isSuccessful = true
-                            )
+                        _submitClaimState.update { 
+                            SubmitClaimState(isSuccessful = true)
                         }
                     },
                     onFailure = { error ->

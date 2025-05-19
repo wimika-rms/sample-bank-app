@@ -31,7 +31,7 @@ fun QuickActionsCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 0.dp, vertical = 8.dp)
     ) {
         Text(
             text = title,

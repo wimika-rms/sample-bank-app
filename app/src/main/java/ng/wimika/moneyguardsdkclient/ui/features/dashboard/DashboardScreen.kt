@@ -115,18 +115,6 @@ fun DashboardScreen(
                 }
             }
 
-//            FeatureCategory(
-//                title = "Enable MoneyGuard",
-//                icon = Icons.Default.Add,
-//                onClick = onEnableMoneyGuard
-//            )
-//
-//            FeatureCategory(
-//                title = "Utilities",
-//                icon = Icons.Default.Settings,
-//                onClick = onUtilitiesClick
-//            )
-
             AccountDetailsCard()
 
             Box(modifier = Modifier.height(16.dp))
