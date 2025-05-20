@@ -33,8 +33,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+
 
 
 @Serializable
@@ -128,9 +129,9 @@ fun LoginScreen(
                         IconButton(onClick = { onEvent(LoginEvent.OnPasswordVisibilityToggle) }) {
                             Icon(
                                 imageVector = if (loginState.showPassword) 
-                                    Icons.Default.Lock
+                                    Icons.Filled.Lock
                                 else 
-                                    Icons.Default.Edit,
+                                    Icons.Filled.Info,
                                 contentDescription = if (loginState.showPassword) 
                                     "Hide password" 
                                 else 
@@ -179,7 +180,7 @@ fun LoginScreen(
 
             // Version number in bottom right
             Text(
-                text = "v0.2.1",
+                text = "v0.2.2",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier
