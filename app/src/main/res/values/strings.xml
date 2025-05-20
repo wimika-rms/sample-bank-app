@@ -1,3 +1,4 @@
 <resources>
+      <string name="video">Video</string>
     <string name="app_name">MoneyGuard Sample Bank App</string>
 </resources>

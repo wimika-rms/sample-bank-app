@@ -9,9 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -27,11 +26,12 @@ fun QuickActionsCard(
     title: String,
     onUtilityClick: () -> Unit,
     onDebitCheckClick: () -> Unit,
+    onClaimsClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 0.dp, vertical = 8.dp)
     ) {
         Text(
             text = title,
@@ -39,23 +39,47 @@ fun QuickActionsCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.fillMaxWidth(),
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            QuickAction(
-                icon = Icons.Default.Settings,
-                label = "Utility",
-                onClick = onUtilityClick,
-                modifier = Modifier.weight(1f)
-            )
-            QuickAction(
-                icon = Icons.Default.Info,
-                label = "Debit Check",
-                onClick = onDebitCheckClick,
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                QuickAction(
+                    icon = Icons.Default.Settings,
+                    label = "Utility",
+                    onClick = onUtilityClick,
+                    modifier = Modifier.weight(1f)
+                )
+                QuickAction(
+                    icon = Icons.Default.Info,
+                    label = "Debit Check",
+                    onClick = onDebitCheckClick,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                QuickAction(
+                    icon = Icons.Default.Email,
+                    label = "Claims",
+                    onClick = onClaimsClick,
+                    modifier = Modifier.weight(1f)
+                )
+//                QuickAction(
+//                    icon = Icons.Default.Info,
+//                    label = "Debit Check",
+//                    onClick = onDebitCheckClick,
+//                    modifier = Modifier.weight(1f)
+//                )
+            }
         }
+
     }
 }
 
@@ -100,7 +124,8 @@ private fun QuickActionsCardPreview() {
         QuickActionsCard(
             title = "Quick Actions",
             onUtilityClick = {},
-            onDebitCheckClick = {}
+            onDebitCheckClick = {},
+            onClaimsClick = {}
         )
     }
 }
