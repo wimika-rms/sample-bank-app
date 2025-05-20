@@ -46,7 +46,7 @@ fun NavigationHost(
 
             composable<StartupRiskScreen> {
                 StartupRiskDestination(
-                    launchLoginScreen =  {
+                    launchLoginScreen = {
                         navController.navigate(Login)
                     }
                 )
@@ -87,9 +87,9 @@ fun NavigationHost(
                     onEnableMoneyGuard = {
                         navController.navigate(MoneyGuard)
                     },
-                onClaimClick = {
-                    navController.navigate(Claim)
-                })
+                    onClaimClick = {
+                        navController.navigate(Claim)
+                    })
             }
 
             composable<Utility> {
@@ -113,37 +113,38 @@ fun NavigationHost(
                 )
             }
 
-            composable <CheckDebitTransaction>{
+            composable<CheckDebitTransaction> {
                 CheckDebitTransactionDestination()
             }
-        }
 
-        composable<Claim>{
-            ClaimDestination(
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                addClaimsClick = {
-                    navController.navigate(SubmitClaim)
-                },
-                onClaimItemClick = {id ->
-                    navController.navigate(ClaimDetail(claimId = id))
-                }
-            )
-        }
 
-        composable <ClaimDetail>{ backStackEntry ->
-            val claimDetail = backStackEntry.toRoute<ClaimDetail>()
-            ClaimDetailDestination(
-                claimId = claimDetail.claimId,
-                onBackPressed = { navController.popBackStack() }
-            )
-        }
+            composable<Claim> {
+                ClaimDestination(
+                    onBackClick = {
+                        navController.popBackStack()
+                    },
+                    addClaimsClick = {
+                        navController.navigate(SubmitClaim)
+                    },
+                    onClaimItemClick = { id ->
+                        navController.navigate(ClaimDetail(claimId = id))
+                    }
+                )
+            }
 
-        composable <SubmitClaim>{
-            SubmitClaimDestination(
-                 onBackPressed = { navController.popBackStack() }
-            )
+            composable<ClaimDetail> { backStackEntry ->
+                val claimDetail = backStackEntry.toRoute<ClaimDetail>()
+                ClaimDetailDestination(
+                    claimId = claimDetail.claimId,
+                    onBackPressed = { navController.popBackStack() }
+                )
+            }
+
+            composable<SubmitClaim> {
+                SubmitClaimDestination(
+                    onBackPressed = { navController.popBackStack() }
+                )
+            }
         }
     }
 }
