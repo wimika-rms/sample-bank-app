@@ -60,7 +60,13 @@ fun LoginDestination(
         viewModel.loginResultEvent.collect { event ->
             when(event) {
                 is LoginResultEvent.CredentialCheckSuccessful -> {
-                    Toast.makeText(context, "Credential check: " + event.result.name, Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        "Credential check: ${event.result.name}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    // Wait for toast to be shown before navigating
+                    kotlinx.coroutines.delay(2000)
                 }
 
                 is LoginResultEvent.LoginSuccessful -> {
@@ -170,6 +176,16 @@ fun LoginScreen(
                     )
                 }
             }
+
+            // Version number in bottom right
+            Text(
+                text = "v0.2.1",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            )
         }
     }
 }

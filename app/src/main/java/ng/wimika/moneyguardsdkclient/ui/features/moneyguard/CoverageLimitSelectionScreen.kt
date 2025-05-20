@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.CoverageLimit
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
+import ng.wimika.moneyguardsdkclient.utils.CurrencyFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +90,7 @@ fun CoverageLimitSelectionScreen(
                                     .padding(start = 8.dp)
                             ) {
                                 Text(
-                                    text = "₦${limit.limit}",
+                                    text = CurrencyFormatter.format(limit.limit),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
