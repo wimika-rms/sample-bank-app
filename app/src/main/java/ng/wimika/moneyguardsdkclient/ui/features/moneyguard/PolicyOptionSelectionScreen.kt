@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.PolicyOption
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
+import ng.wimika.moneyguardsdkclient.utils.CurrencyFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +91,7 @@ fun PolicyOptionSelectionScreen(
                                     .padding(start = 8.dp)
                             ) {
                                 Text(
-                                    text = "₦${option.priceAndTerm.price}",
+                                    text = CurrencyFormatter.format(option.priceAndTerm.price),
                                     style = MaterialTheme.typography.headlineSmall
                                 )
                                 Text(

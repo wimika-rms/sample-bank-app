@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.BankAccount
 import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.PolicyOption
+import ng.wimika.moneyguardsdkclient.utils.CurrencyFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +66,7 @@ fun SummaryScreen(
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                     Text(
-                        text = "₦${selectedPolicyOption.coverage.coverageLimit.limit}",
+                        text = CurrencyFormatter.format(selectedPolicyOption.coverage.coverageLimit.limit),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -77,7 +78,7 @@ fun SummaryScreen(
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                     Text(
-                        text = "₦${selectedPolicyOption.priceAndTerm.price}/${selectedPolicyOption.priceAndTerm.term}",
+                        text = "${CurrencyFormatter.format(selectedPolicyOption.priceAndTerm.price)}/${selectedPolicyOption.priceAndTerm.term}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

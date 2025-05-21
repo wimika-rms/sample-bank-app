@@ -29,6 +29,8 @@ import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepository
 import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepositoryImpl
 import ng.wimika.moneyguardsdkclient.utils.computeSha256Hash
+import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardAppStatus
+import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
 
 class LoginViewModel : ViewModel() {
 
@@ -40,6 +42,10 @@ class LoginViewModel : ViewModel() {
 
     private val preferenceManager: IPreferenceManager? by lazy {
         MoneyGuardClientApp.preferenceManager
+    }
+
+    private val moneyGuardUtility: MoneyGuardUtility? by lazy {
+        MoneyGuardClientApp.sdkService?.utility()
     }
 
     private val _loginState: MutableStateFlow<LoginState> = MutableStateFlow(LoginState())
@@ -167,20 +173,33 @@ class LoginViewModel : ViewModel() {
                                     preferenceManager?.saveMoneyGuardToken(session.token)
 
                                     try {
-                                        val scanResult = performCredentialChecks(
-                                            session.token,
-                                            loginState.value.email,
-                                            loginState.value.password
-                                        )
+                                        // Check MoneyGuard status before performing credential check
+                                        val moneyGuardStatus = moneyGuardUtility?.checkMoneyguardStatus(session.token)
+                                        Log.d("LoginViewModel", "MoneyGuard Status: $moneyGuardStatus")
+                                        
+                                        if (moneyGuardStatus == MoneyGuardAppStatus.Active || 
+                                            moneyGuardStatus == MoneyGuardAppStatus.ValidPolicyAppNotInstalled) {
+                                            try {
+                                                // Only perform credential check if status is Active or ValidPolicyAppNotInstalled
+                                                val scanResult = performCredentialChecks(
+                                                    session.token,
+                                                    loginState.value.email,
+                                                    loginState.value.password
+                                                )
+                                                Log.d("LoginViewModel", "Credential Check Result: ${scanResult.status}")
+                                                _loginResultEvent.emit(LoginResultEvent.CredentialCheckSuccessful(scanResult.status))
+                                            } catch (e: Exception) {
+                                                Log.e("LoginViewModel", "Error during credential check", e)
+                                                // Don't update error state for credential check failures
+                                            }
+                                        } else {
+                                            Log.d("LoginViewModel", "Skipping credential check due to MoneyGuard status: $moneyGuardStatus")
+                                        }
 
-                                        _loginResultEvent.emit(LoginResultEvent.CredentialCheckSuccessful(scanResult.status))
-
-                                        delay(1000)
-
+                                        // Emit login success after credential check
                                         _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
-                                        onLoginSuccess?.invoke()
                                     } catch (e: Exception) {
-                                        Log.e("LoginViewModel", "Error during credential check", e)
+                                        Log.e("LoginViewModel", "Error in MoneyGuard session handling", e)
                                         _loginState.update { state ->
                                             state.copy(isLoading = false, errorMessage = e.message)
                                         }

@@ -24,6 +24,7 @@ fun CheckoutScreen(
     var expanded by remember { mutableStateOf(false) }
     var selectedAccount by remember { mutableStateOf<BankAccount?>(null) }
     var autoRenew by remember { mutableStateOf(false) }
+    var isCreatingPolicy by remember { mutableStateOf(false) }
     val viewModel: MoneyGuardViewModel = viewModel(
         factory = MoneyGuardViewModelFactory(moneyGuardPolicy, token)
     )
@@ -133,13 +134,28 @@ fun CheckoutScreen(
         Button(
             onClick = { 
                 selectedAccount?.let { account ->
+                    isCreatingPolicy = true
                     onProceed(account.id.toString(), autoRenew)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = selectedAccount != null
+            enabled = selectedAccount != null && !isCreatingPolicy
         ) {
-            Text("Proceed to Payment")
+            if (isCreatingPolicy) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                    Text("Purchasing Policy...")
+                }
+            } else {
+                Text("Proceed to Payment")
+            }
         }
     }
 } 

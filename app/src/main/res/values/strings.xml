@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">MoneyGuardSdkClient</string>
-    <string name="video">Video</string>
+      <string name="video">Video</string>
+    <string name="app_name">MoneyGuard Sample Bank App</string>
 </resources>
