@@ -41,9 +41,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.runtime.setValue
+import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.models.GeoLocation
 import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
-
-
+import android.content.Context
+import android.location.LocationManager
+import androidx.compose.ui.res.painterResource
+import ng.wimika.moneyguardsdkclient.R
+import ng.wimika.moneyguardsdkclient.utils.LocationViewModel
+import ng.wimika.moneyguardsdkclient.utils.LocationViewModelFactory
 
 @Serializable
 object Login
@@ -53,15 +58,22 @@ sealed class LoginEvent {
     data class OnEmailChange(val email: String) : LoginEvent()
     data class OnPasswordChange(val password: String) : LoginEvent()
     data object OnPasswordVisibilityToggle : LoginEvent()
+    data class UpdateGeoLocation(val geoLocation: GeoLocation) : LoginEvent()
 }
-
 
 @Composable
 fun LoginDestination(
     viewModel: LoginViewModel = viewModel(),
+    locationViewModel: LocationViewModel = viewModel(
+        factory = LocationViewModelFactory(
+            context = LocalContext.current,
+            locationManager = LocalContext.current.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        )
+    ),
     onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.loginState.collectAsStateWithLifecycle()
+    val locationState by locationViewModel.locationState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var hasLocationPermissions by remember {
         mutableStateOf(
@@ -77,7 +89,6 @@ fun LoginDestination(
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
 
-    // Request location permissions when screen loads
     LaunchedEffect(Unit) {
         if (!hasLocationPermissions) {
             locationPermissionLauncher.launch(
@@ -89,8 +100,13 @@ fun LoginDestination(
             return@LaunchedEffect
         }
 
-        //Get the user's current location.
+        locationViewModel.getCurrentLocation()
+    }
 
+    LaunchedEffect(locationState) {
+        locationState?.let { location ->
+            viewModel.onEvent(LoginEvent.UpdateGeoLocation(location))
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -118,8 +134,6 @@ fun LoginDestination(
         onEvent = viewModel::onEvent
     )
 }
-
-
 
 @Composable
 fun LoginScreen(
@@ -164,10 +178,11 @@ fun LoginScreen(
                     trailingIcon = {
                         IconButton(onClick = { onEvent(LoginEvent.OnPasswordVisibilityToggle) }) {
                             Icon(
-                                imageVector = if (loginState.showPassword) 
-                                    Icons.Filled.Lock
-                                else 
-                                    Icons.Filled.Info,
+                                painter = painterResource(if (loginState.showPassword)
+                                    R.drawable.ic_eye_close
+                                else
+                                    R.drawable.ic_eye
+                                ),
                                 contentDescription = if (loginState.showPassword) 
                                     "Hide password" 
                                 else 
@@ -226,7 +241,6 @@ fun LoginScreen(
         }
     }
 }
-
 
 @Preview
 @Composable

@@ -97,6 +97,12 @@ class LoginViewModel : ViewModel() {
                     currentState.copy(showPassword = !currentState.showPassword)
                 }
             }
+
+            is LoginEvent.UpdateGeoLocation -> {
+                _loginState.update { currentState ->
+                    currentState.copy(geoLocation = event.geoLocation)
+                }
+            }
         }
     }
 
