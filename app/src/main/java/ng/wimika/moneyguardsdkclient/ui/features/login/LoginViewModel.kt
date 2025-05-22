@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
 import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.SessionResponse
 import ng.wimika.moneyguard_sdk_auth.datasource.auth_service.models.credential.Credential
@@ -31,6 +33,7 @@ import ng.wimika.moneyguardsdkclient.ui.features.login.data.LoginRepositoryImpl
 import ng.wimika.moneyguardsdkclient.utils.computeSha256Hash
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardAppStatus
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
+import ng.wimika.moneyguard_sdk.services.utility.models.LocationCheck
 
 class LoginViewModel : ViewModel() {
 
@@ -54,7 +57,6 @@ class LoginViewModel : ViewModel() {
     private val _loginResultEvent: MutableSharedFlow<LoginResultEvent> = MutableSharedFlow()
     val loginResultEvent: SharedFlow<LoginResultEvent> = _loginResultEvent.asSharedFlow()
 
-    private var onLoginSuccess: (() -> Unit)? = null
 
     companion object {
         private const val WIMIKA_BANK = 101
@@ -91,10 +93,31 @@ class LoginViewModel : ViewModel() {
             }
 
             LoginEvent.OnLoginClick -> onLoginClick()
-            
+
             LoginEvent.OnPasswordVisibilityToggle -> {
                 _loginState.update { currentState ->
                     currentState.copy(showPassword = !currentState.showPassword)
+                }
+            }
+
+            is LoginEvent.UpdateGeoLocation -> {
+                _loginState.update { currentState ->
+                    currentState.copy(geoLocation = event.geoLocation)
+                }
+            }
+
+            is LoginEvent.ContinueLoginWithFlaggedLocation -> {
+                _loginState.update { currentState ->
+                    currentState.copy(token = event.token, showDangerousLocationModal = false)
+                }
+                preferenceManager?.saveMoneyGuardToken(event.token)
+                viewModelScope.launch {
+                    _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(event.token))
+                }
+            }
+            LoginEvent.DismissDangerousLocationModal -> {
+                _loginState.update { currentState ->
+                    currentState.copy(showDangerousLocationModal = false)
                 }
             }
         }
@@ -126,12 +149,59 @@ class LoginViewModel : ViewModel() {
         }
     }
 
+    private fun onLoginSuccess(token: String) {
+        viewModelScope.launch {
+            val currentLocation = loginState.value.geoLocation
+
+            if (currentLocation == null) {
+                _loginResultEvent.emit(LoginResultEvent.LoginFailed(error = "Cannot get your current location"))
+                return@launch
+            }
+
+            val locationCheck = LocationCheck(
+                latitude = currentLocation.lat,
+                longitude = currentLocation.lon
+            )
+
+            moneyGuardUtility?.checkLocation(
+                token,
+                locationCheck = locationCheck,
+                onSuccess = { result ->
+                    viewModelScope.launch {
+                        if (result) {
+                            preferenceManager?.saveMoneyGuardToken(token)
+                            _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(token))
+                        } else {
+                            _loginState.update { currentState ->
+                                currentState.copy(
+                                    token = token,
+                                    showDangerousLocationModal = true
+                                )
+                            }
+                        }
+                    }
+                },
+                onFailure = { error ->
+                    viewModelScope.launch {
+                        _loginResultEvent.emit(
+                            LoginResultEvent.LoginFailed(
+                                error = error.message ?: ""
+                            )
+                        )
+                    }
+                },
+            )
+        }
+    }
 
     private fun getMoneyGuardSession(partnerBankSessionId: String) {
         viewModelScope.launch {
             if (moneyGuardAuthentication == null) {
                 _loginState.update { state ->
-                    state.copy(isLoading = false, errorMessage = "MoneyGuard authentication service is not available")
+                    state.copy(
+                        isLoading = false,
+                        errorMessage = "MoneyGuard authentication service is not available"
+                    )
                 }
                 return@launch
             }
@@ -147,9 +217,15 @@ class LoginViewModel : ViewModel() {
                     ?.collect { result ->
                         when (result) {
                             is MoneyGuardResult.Failure -> {
-                                Log.e("LoginViewModel", "Registration failed: ${result.error.message}")
+                                Log.e(
+                                    "LoginViewModel",
+                                    "Registration failed: ${result.error.message}"
+                                )
                                 _loginState.update { state ->
-                                    state.copy(isLoading = false, errorMessage = result.error.message)
+                                    state.copy(
+                                        isLoading = false,
+                                        errorMessage = result.error.message
+                                    )
                                 }
                             }
 
@@ -170,15 +246,18 @@ class LoginViewModel : ViewModel() {
                                 }
 
                                 if (session != null) {
-                                    preferenceManager?.saveMoneyGuardToken(session.token)
-
                                     try {
                                         // Check MoneyGuard status before performing credential check
-                                        val moneyGuardStatus = moneyGuardUtility?.checkMoneyguardStatus(session.token)
-                                        Log.d("LoginViewModel", "MoneyGuard Status: $moneyGuardStatus")
-                                        
-                                        if (moneyGuardStatus == MoneyGuardAppStatus.Active || 
-                                            moneyGuardStatus == MoneyGuardAppStatus.ValidPolicyAppNotInstalled) {
+                                        val moneyGuardStatus =
+                                            moneyGuardUtility?.checkMoneyguardStatus(session.token)
+                                        Log.d(
+                                            "LoginViewModel",
+                                            "MoneyGuard Status: $moneyGuardStatus"
+                                        )
+
+                                        if (moneyGuardStatus == MoneyGuardAppStatus.Active ||
+                                            moneyGuardStatus == MoneyGuardAppStatus.ValidPolicyAppNotInstalled
+                                        ) {
                                             try {
                                                 // Only perform credential check if status is Active or ValidPolicyAppNotInstalled
                                                 val scanResult = performCredentialChecks(
@@ -186,20 +265,39 @@ class LoginViewModel : ViewModel() {
                                                     loginState.value.email,
                                                     loginState.value.password
                                                 )
-                                                Log.d("LoginViewModel", "Credential Check Result: ${scanResult.status}")
-                                                _loginResultEvent.emit(LoginResultEvent.CredentialCheckSuccessful(scanResult.status))
+                                                Log.d(
+                                                    "LoginViewModel",
+                                                    "Credential Check Result: ${scanResult.status}"
+                                                )
+                                                _loginResultEvent.emit(
+                                                    LoginResultEvent.CredentialCheckSuccessful(
+                                                        scanResult.status
+                                                    )
+                                                )
                                             } catch (e: Exception) {
-                                                Log.e("LoginViewModel", "Error during credential check", e)
+                                                Log.e(
+                                                    "LoginViewModel",
+                                                    "Error during credential check",
+                                                    e
+                                                )
                                                 // Don't update error state for credential check failures
                                             }
                                         } else {
-                                            Log.d("LoginViewModel", "Skipping credential check due to MoneyGuard status: $moneyGuardStatus")
+                                            Log.d(
+                                                "LoginViewModel",
+                                                "Skipping credential check due to MoneyGuard status: $moneyGuardStatus"
+                                            )
                                         }
 
                                         // Emit login success after credential check
-                                        _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
+                                        onLoginSuccess(session.token)
+                                        //_loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
                                     } catch (e: Exception) {
-                                        Log.e("LoginViewModel", "Error in MoneyGuard session handling", e)
+                                        Log.e(
+                                            "LoginViewModel",
+                                            "Error in MoneyGuard session handling",
+                                            e
+                                        )
                                         _loginState.update { state ->
                                             state.copy(isLoading = false, errorMessage = e.message)
                                         }
@@ -225,20 +323,24 @@ class LoginViewModel : ViewModel() {
     ) = suspendCoroutine<CredentialScanResult> { coroutine ->
         val credential = Credential(
             username = username,
-            passwordStartingCharactersHash = password.substring(password.length -3).computeSha256Hash(),
+            passwordStartingCharactersHash = password.substring(password.length - 3)
+                .computeSha256Hash(),
             domain = "wimika.ng",
             hashAlgorithm = HashAlgorithm.SHA256,
         )
 
-        moneyGuardAuthentication?.credentialCheck(sessionToken, credential,
+        moneyGuardAuthentication?.credentialCheck(
+            sessionToken, credential,
             onResult = { result ->
-                when(result) {
+                when (result) {
                     is MoneyGuardResult.Failure -> {
                         coroutine.resumeWithException(result.error)
                     }
+
                     MoneyGuardResult.Loading -> {
 
                     }
+
                     is MoneyGuardResult.Success<CredentialScanResult> -> {
                         coroutine.resume(result.data)
                     }
