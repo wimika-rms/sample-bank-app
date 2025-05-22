@@ -94,7 +94,7 @@ fun LoginDestination(
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(hasLocationPermissions) {
         if (!hasLocationPermissions) {
             locationPermissionLauncher.launch(
                 arrayOf(
