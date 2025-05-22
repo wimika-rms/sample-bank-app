@@ -9,5 +9,7 @@ data class LoginState(
     val password: String = "",
     val showPassword: Boolean = false,
     val sessionId: String? = null,
-    val geoLocation: GeoLocation? = null
+    val geoLocation: GeoLocation? = null,
+    val showDangerousLocationModal: Boolean = false,
+    val token: String? = null,
 )

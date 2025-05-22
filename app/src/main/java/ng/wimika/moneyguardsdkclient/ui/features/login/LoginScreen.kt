@@ -46,9 +46,12 @@ import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
 import android.content.Context
 import android.location.LocationManager
 import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.*
 import ng.wimika.moneyguardsdkclient.R
 import ng.wimika.moneyguardsdkclient.utils.LocationViewModel
 import ng.wimika.moneyguardsdkclient.utils.LocationViewModelFactory
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 
 @Serializable
 object Login
@@ -59,6 +62,8 @@ sealed class LoginEvent {
     data class OnPasswordChange(val password: String) : LoginEvent()
     data object OnPasswordVisibilityToggle : LoginEvent()
     data class UpdateGeoLocation(val geoLocation: GeoLocation) : LoginEvent()
+    data class ContinueLoginWithFlaggedLocation(val token: String): LoginEvent()
+    data object DismissDangerousLocationModal : LoginEvent()
 }
 
 @Composable
@@ -119,11 +124,19 @@ fun LoginDestination(
                         Toast.LENGTH_LONG
                     ).show()
                     // Wait for toast to be shown before navigating
-                    kotlinx.coroutines.delay(2000)
+                    delay(2000)
                 }
 
                 is LoginResultEvent.LoginSuccessful -> {
                     onLoginSuccess()
+                }
+
+                is LoginResultEvent.LoginFailed -> {
+                    Toast.makeText(
+                        context,
+                        event.error,
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -149,6 +162,42 @@ fun LoginScreen(
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
+            if (loginState.showDangerousLocationModal) {
+                AlertDialog(
+                    onDismissRequest = {
+                        onEvent(LoginEvent.DismissDangerousLocationModal)
+                    },
+                    title = { Text("Warning: Suspicious Location") },
+                    text = {
+                        Text("We've detected that you're logging in from a location that has been flagged as suspicious. This could be due to:\n\n" +
+                                "• Unusual login location\n" +
+                                "• High-risk area\n" +
+                                "• Previous security incidents\n\n" +
+                                "Would you like to continue with the login process?")
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                loginState.token?.let {
+                                    onEvent(LoginEvent.ContinueLoginWithFlaggedLocation(it))
+                                }
+                            }
+                        ) {
+                            Text("Continue")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                onEvent(LoginEvent.DismissDangerousLocationModal)
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Start,
@@ -216,9 +265,9 @@ fun LoginScreen(
                 }
 
                 if (loginState.sessionId != null) {
-                    Text("Logged in: Successful",
-                        color = Color.DarkGray
-                    )
+//                    Text("Logged in: Successful",
+//                        color = Color.DarkGray
+//                    )
                 }
 
                 if (loginState.errorMessage != null) {
