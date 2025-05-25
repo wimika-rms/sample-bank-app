@@ -180,7 +180,7 @@ fun LoginScreen(
 
             // Version number in bottom right
             Text(
-                text = "v0.2.2",
+                text = "v0.2.3",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier
