@@ -12,6 +12,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,10 +26,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import ng.wimika.moneyguardsdkclient.utils.LocationViewModel
+import ng.wimika.moneyguardsdkclient.utils.LocationViewModelFactory
 
 
 @Serializable
@@ -37,28 +46,62 @@ object CheckDebitTransaction
 
 @Composable
 fun CheckDebitTransactionDestination(
-    viewModel: CheckDebitTransactionViewModel = viewModel(
-        factory = CheckDebitTransactionViewModelFactory(
+    viewModel: CheckDebitTransactionViewModel = viewModel(),
+    locationViewModel: LocationViewModel = viewModel(
+        factory = LocationViewModelFactory(
             context = LocalContext.current,
             locationManager = LocalContext.current.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         )
-    )
+    ),
+    onBackClick: () -> Unit
 ) {
     val state by viewModel.checkDebitState.collectAsStateWithLifecycle()
+    val locationState by locationViewModel.locationState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        locationViewModel.getCurrentLocation()
+    }
+
+    LaunchedEffect(locationState) {
+        locationState?.let { location ->
+            viewModel.updateLocation(location)
+        }
+    }
 
     CheckDebitTransactionScreen(
+        onBackClick = onBackClick,
         state = state,
         onEvent = viewModel::onEvent
     )
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CheckDebitTransactionScreen(
+    onBackClick: () -> Unit,
     state: CheckDebitTransactionState,
     onEvent: (CheckDebitTransactionEvent) -> Unit
 ) {
-    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+    Scaffold(modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Check Debit Transaction",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+        }) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
@@ -66,12 +109,6 @@ private fun CheckDebitTransactionScreen(
                     .padding(innerPadding)
                     .padding(16.dp)
             ) {
-                Text(
-                    text = "Check Debit Transaction",
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                     value = state.amount.toString(),
@@ -189,7 +226,8 @@ private fun CheckDebitTransactionScreenPreview() {
     MaterialTheme {
         CheckDebitTransactionScreen(
             state = CheckDebitTransactionState(),
-            onEvent = {}
+            onEvent = {},
+            onBackClick = {}
         )
     }
 }

@@ -1,6 +1,9 @@
 package ng.wimika.moneyguardsdkclient.ui.features.login
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,8 +40,18 @@ import kotlinx.serialization.Serializable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
-
-
+import androidx.compose.runtime.setValue
+import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.models.GeoLocation
+import ng.wimika.moneyguardsdkclient.utils.PermissionUtils
+import android.content.Context
+import android.location.LocationManager
+import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.*
+import ng.wimika.moneyguardsdkclient.R
+import ng.wimika.moneyguardsdkclient.utils.LocationViewModel
+import ng.wimika.moneyguardsdkclient.utils.LocationViewModelFactory
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 
 @Serializable
 object Login
@@ -46,16 +61,58 @@ sealed class LoginEvent {
     data class OnEmailChange(val email: String) : LoginEvent()
     data class OnPasswordChange(val password: String) : LoginEvent()
     data object OnPasswordVisibilityToggle : LoginEvent()
+    data class UpdateGeoLocation(val geoLocation: GeoLocation) : LoginEvent()
+    data class ContinueLoginWithFlaggedLocation(val token: String): LoginEvent()
+    data object DismissDangerousLocationModal : LoginEvent()
 }
-
 
 @Composable
 fun LoginDestination(
     viewModel: LoginViewModel = viewModel(),
+    locationViewModel: LocationViewModel = viewModel(
+        factory = LocationViewModelFactory(
+            context = LocalContext.current,
+            locationManager = LocalContext.current.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        )
+    ),
     onLoginSuccess: () -> Unit
 ) {
     val state by viewModel.loginState.collectAsStateWithLifecycle()
+    val locationState by locationViewModel.locationState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var hasLocationPermissions by remember {
+        mutableStateOf(
+            PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                    && PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+        )
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasLocationPermissions = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+    }
+
+    LaunchedEffect(hasLocationPermissions) {
+        if (!hasLocationPermissions) {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+            return@LaunchedEffect
+        }
+
+        locationViewModel.getCurrentLocation()
+    }
+
+    LaunchedEffect(locationState) {
+        locationState?.let { location ->
+            viewModel.onEvent(LoginEvent.UpdateGeoLocation(location))
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loginResultEvent.collect { event ->
@@ -67,11 +124,19 @@ fun LoginDestination(
                         Toast.LENGTH_LONG
                     ).show()
                     // Wait for toast to be shown before navigating
-                    kotlinx.coroutines.delay(2000)
+                    delay(2000)
                 }
 
                 is LoginResultEvent.LoginSuccessful -> {
                     onLoginSuccess()
+                }
+
+                is LoginResultEvent.LoginFailed -> {
+                    Toast.makeText(
+                        context,
+                        event.error,
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
@@ -82,8 +147,6 @@ fun LoginDestination(
         onEvent = viewModel::onEvent
     )
 }
-
-
 
 @Composable
 fun LoginScreen(
@@ -99,6 +162,42 @@ fun LoginScreen(
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
+            if (loginState.showDangerousLocationModal) {
+                AlertDialog(
+                    onDismissRequest = {
+                        onEvent(LoginEvent.DismissDangerousLocationModal)
+                    },
+                    title = { Text("Warning: Suspicious Location") },
+                    text = {
+                        Text("We've detected that you're logging in from a location that has been flagged as suspicious. This could be due to:\n\n" +
+                                "• Unusual login location\n" +
+                                "• High-risk area\n" +
+                                "• Previous security incidents\n\n" +
+                                "Would you like to continue with the login process?")
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                loginState.token?.let {
+                                    onEvent(LoginEvent.ContinueLoginWithFlaggedLocation(it))
+                                }
+                            }
+                        ) {
+                            Text("Continue")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(
+                            onClick = {
+                                onEvent(LoginEvent.DismissDangerousLocationModal)
+                            }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
+            }
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Start,
@@ -128,10 +227,11 @@ fun LoginScreen(
                     trailingIcon = {
                         IconButton(onClick = { onEvent(LoginEvent.OnPasswordVisibilityToggle) }) {
                             Icon(
-                                imageVector = if (loginState.showPassword) 
-                                    Icons.Filled.Lock
-                                else 
-                                    Icons.Filled.Info,
+                                painter = painterResource(if (loginState.showPassword)
+                                    R.drawable.ic_eye_close
+                                else
+                                    R.drawable.ic_eye
+                                ),
                                 contentDescription = if (loginState.showPassword) 
                                     "Hide password" 
                                 else 
@@ -165,9 +265,9 @@ fun LoginScreen(
                 }
 
                 if (loginState.sessionId != null) {
-                    Text("Logged in: Successful",
-                        color = Color.DarkGray
-                    )
+//                    Text("Logged in: Successful",
+//                        color = Color.DarkGray
+//                    )
                 }
 
                 if (loginState.errorMessage != null) {
@@ -190,7 +290,6 @@ fun LoginScreen(
         }
     }
 }
-
 
 @Preview
 @Composable

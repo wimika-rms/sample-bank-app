@@ -26,7 +26,6 @@ import ng.wimika.moneyguardsdkclient.ui.features.claims.Claim
 import ng.wimika.moneyguardsdkclient.ui.features.claims.ClaimDestination
 import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetail
 import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetailDestination
-import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetailsScreen
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaim
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimDestination
 
@@ -114,7 +113,11 @@ fun NavigationHost(
             }
 
             composable<CheckDebitTransaction> {
-                CheckDebitTransactionDestination()
+                CheckDebitTransactionDestination(
+                    onBackClick = {
+                        navController.popBackStack()
+                    }
+                )
             }
 
 
