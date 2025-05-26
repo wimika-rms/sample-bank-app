@@ -88,6 +88,9 @@ fun NavigationHost(
                     },
                     onClaimClick = {
                         navController.navigate(Claim)
+                    },
+                    onTypingProfileClick = {
+                        navController.popBackStack()
                     })
             }
 

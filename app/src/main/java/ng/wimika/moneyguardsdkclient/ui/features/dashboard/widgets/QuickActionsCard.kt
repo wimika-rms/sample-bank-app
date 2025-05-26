@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
@@ -19,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 
 @Composable
 fun QuickActionsCard(
@@ -27,95 +33,88 @@ fun QuickActionsCard(
     onUtilityClick: () -> Unit,
     onDebitCheckClick: () -> Unit,
     onClaimsClick: () -> Unit,
+    onTypingProfileClick: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 0.dp, vertical = 8.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
         Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge
+            )
+
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                QuickAction(
-                    icon = Icons.Default.Settings,
-                    label = "Utility",
+                QuickActionButton(
+                    text = "Utilities",
+                    icon = Icons.Default.Build,
                     onClick = onUtilityClick,
                     modifier = Modifier.weight(1f)
                 )
-                QuickAction(
-                    icon = Icons.Default.Info,
-                    label = "Debit Check",
+
+                QuickActionButton(
+                    text = "Debit Check",
+                    icon = Icons.Default.CheckCircle,
                     onClick = onDebitCheckClick,
                     modifier = Modifier.weight(1f)
                 )
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                QuickAction(
-                    icon = Icons.Default.Email,
-                    label = "Claims",
+                QuickActionButton(
+                    text = "Claims",
+                    icon = Icons.Default.Add,
                     onClick = onClaimsClick,
                     modifier = Modifier.weight(1f)
                 )
-//                QuickAction(
-//                    icon = Icons.Default.Info,
-//                    label = "Debit Check",
-//                    onClick = onDebitCheckClick,
-//                    modifier = Modifier.weight(1f)
-//                )
+
+                QuickActionButton(
+                    text = "Typing Profile",
+                    icon = Icons.Default.Edit,
+                    onClick = onTypingProfileClick,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
-
     }
 }
 
-
 @Composable
-fun QuickAction(
-    icon: ImageVector,
-    label: String,
+private fun QuickActionButton(
+    text: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Button(
+        onClick = onClick,
         modifier = modifier
-            .height(120.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable { onClick() }
-            .padding(vertical = 24.dp, horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(40.dp)
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = text)
+        }
     }
 }
-
-
 
 @Preview
 @Composable
@@ -125,20 +124,8 @@ private fun QuickActionsCardPreview() {
             title = "Quick Actions",
             onUtilityClick = {},
             onDebitCheckClick = {},
-            onClaimsClick = {}
-        )
-    }
-}
-
-
-@Preview
-@Composable
-private fun QuickActionPreview() {
-    MaterialTheme {
-        QuickAction(
-            icon = Icons.AutoMirrored.Filled.Send,
-            label = "Transfer",
-            onClick = { /* TODO: Handle Transfer */ }
+            onClaimsClick = {},
+            onTypingProfileClick = {}
         )
     }
 }

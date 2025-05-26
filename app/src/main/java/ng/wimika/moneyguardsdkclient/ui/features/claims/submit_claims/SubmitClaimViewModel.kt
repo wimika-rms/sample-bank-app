@@ -199,7 +199,7 @@ class SubmitClaimViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             moneyGuardPolicy?.getUserAccounts(token, partnerBankId = 101)?.fold(
                 onSuccess = { response ->
-                    val bankAccountsWithActivePolicy = response.bankAccounts.filter { it.hasActivePolicy }
+                    val bankAccountsWithActivePolicy = response.bankAccounts.filter { it.hasAcivePolicy }
 
                     _submitClaimState.update { currentState ->
                         currentState.copy(accounts = bankAccountsWithActivePolicy)

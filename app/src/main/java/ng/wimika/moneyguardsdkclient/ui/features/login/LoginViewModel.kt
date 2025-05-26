@@ -151,46 +151,49 @@ class LoginViewModel : ViewModel() {
 
     private fun onLoginSuccess(token: String) {
         viewModelScope.launch {
-            val currentLocation = loginState.value.geoLocation
 
-            if (currentLocation == null) {
-                _loginResultEvent.emit(LoginResultEvent.LoginFailed(error = "Cannot get your current location"))
-                return@launch
-            }
-
-            val locationCheck = LocationCheck(
-                latitude = currentLocation.lat,
-                longitude = currentLocation.lon
-            )
-
-            moneyGuardUtility?.checkLocation(
-                token,
-                locationCheck = locationCheck,
-                onSuccess = { result ->
-                    viewModelScope.launch {
-                        if (result) {
-                            preferenceManager?.saveMoneyGuardToken(token)
+            preferenceManager?.saveMoneyGuardToken(token)
                             _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(token))
-                        } else {
-                            _loginState.update { currentState ->
-                                currentState.copy(
-                                    token = token,
-                                    showDangerousLocationModal = true
-                                )
-                            }
-                        }
-                    }
-                },
-                onFailure = { error ->
-                    viewModelScope.launch {
-                        _loginResultEvent.emit(
-                            LoginResultEvent.LoginFailed(
-                                error = error.message ?: ""
-                            )
-                        )
-                    }
-                },
-            )
+//            val currentLocation = loginState.value.geoLocation
+//
+//            if (currentLocation == null) {
+//                _loginResultEvent.emit(LoginResultEvent.LoginFailed(error = "Cannot get your current location"))
+//                return@launch
+//            }
+
+//            val locationCheck = LocationCheck(
+//                latitude = currentLocation.lat,
+//                longitude = currentLocation.lon
+//            )
+
+//            moneyGuardUtility?.checkLocation(
+//                token,
+//                locationCheck = locationCheck,
+//                onSuccess = { result ->
+//                    viewModelScope.launch {
+//                        if (result) {
+//                            preferenceManager?.saveMoneyGuardToken(token)
+//                            _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(token))
+//                        } else {
+//                            _loginState.update { currentState ->
+//                                currentState.copy(
+//                                    token = token,
+//                                    showDangerousLocationModal = true
+//                                )
+//                            }
+//                        }
+//                    }
+//                },
+//                onFailure = { error ->
+//                    viewModelScope.launch {
+//                        _loginResultEvent.emit(
+//                            LoginResultEvent.LoginFailed(
+//                                error = error.message ?: ""
+//                            )
+//                        )
+//                    }
+//                },
+//            )
         }
     }
 

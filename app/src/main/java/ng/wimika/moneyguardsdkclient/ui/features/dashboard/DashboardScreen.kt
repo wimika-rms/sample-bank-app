@@ -46,6 +46,7 @@ fun DashboardDestination(
     onEnableMoneyGuard: () -> Unit,
     onDebitCheckClick: () -> Unit,
     onClaimClick: () -> Unit,
+    onTypingProfileClick: () -> Unit,
     onLogout: () -> Unit
 ) {
     DashboardScreen(
@@ -56,7 +57,8 @@ fun DashboardDestination(
             onLogout()
         },
         onEnableMoneyGuard = onEnableMoneyGuard,
-        onClaimClick = onClaimClick
+        onClaimClick = onClaimClick,
+        onTypingProfileClick = onTypingProfileClick
     )
 }
 
@@ -66,6 +68,7 @@ fun DashboardScreen(
     onEnableMoneyGuard: () -> Unit,
     onDebitCheckClick: () -> Unit,
     onClaimClick: () -> Unit,
+    onTypingProfileClick: () -> Unit,
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
@@ -134,7 +137,8 @@ fun DashboardScreen(
                         )
                     }
                 },
-                onClaimsClick = onClaimClick
+                onClaimsClick = onClaimClick,
+                onTypingProfileClick = onTypingProfileClick
             )
         }
     }
@@ -148,6 +152,7 @@ private fun DashboardScreenPreview() {
         onUtilitiesClick = {},
         onLogout = {},
         onEnableMoneyGuard = {},
-        onClaimClick = {}
+        onClaimClick = {},
+        onTypingProfileClick = {}
     )
 }
