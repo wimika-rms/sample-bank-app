@@ -3,9 +3,10 @@ package ng.wimika.moneyguardsdkclient.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.toRoute
+import androidx.navigation.compose.currentBackStackEntryAsState
 import ng.wimika.moneyguardsdkclient.ui.LocalToken
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransaction
 import ng.wimika.moneyguardsdkclient.ui.features.checkdebit.CheckDebitTransactionDestination
@@ -28,7 +29,27 @@ import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetail
 import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetailDestination
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaim
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimDestination
+import ng.wimika.moneyguardsdkclient.ui.features.typing_profile.TypingProfileScreen
+import ng.wimika.moneyguardsdkclient.ui.features.typing_profile.VerifyTypingProfileScreen
 
+object Routes {
+    const val STARTUP_RISK = "startup_risk"
+    const val LANDING = "landing"
+    const val LOGIN = "login"
+    const val DASHBOARD = "dashboard"
+    const val UTILITY = "utility"
+    const val MONEY_GUARD = "money_guard"
+    const val CHECK_DEBIT = "check_debit"
+    const val CLAIM = "claim"
+    const val CLAIM_DETAIL = "claim_detail/{claimId}"
+    const val SUBMIT_CLAIM = "submit_claim"
+    const val TYPING_PROFILE = "typing_profile"
+    const val VERIFY_TYPING_PROFILE = "verify_typing_profile/{token}"
+
+    fun getClaimDetailRoute(claimId: Int): String {
+        return CLAIM_DETAIL.replace("{claimId}", claimId.toString())
+    }
+}
 
 @Composable
 fun NavigationHost(
@@ -40,64 +61,64 @@ fun NavigationHost(
     CompositionLocalProvider(LocalToken provides token) {
         NavHost(
             navController = navController,
-            startDestination = if (isLoggedIn) Dashboard else StartupRiskScreen
+            startDestination = if (isLoggedIn) Routes.DASHBOARD else Routes.STARTUP_RISK
         ) {
-
-            composable<StartupRiskScreen> {
+            composable(Routes.STARTUP_RISK) {
                 StartupRiskDestination(
                     launchLoginScreen = {
-                        navController.navigate(Login)
+                        navController.navigate(Routes.LOGIN)
                     }
                 )
             }
 
-
-            composable<Landing> {
+            composable(Routes.LANDING) {
                 LandingScreen(
                     gotoLoginClick = {
-                        navController.navigate(Login)
+                        navController.navigate(Routes.LOGIN)
                     }
                 )
             }
 
-            composable<Login> {
+            composable(Routes.LOGIN) {
                 LoginDestination(
+                    navController = navController,
                     onLoginSuccess = {
-                        navController.navigate(Dashboard) {
-                            popUpTo(Landing) { inclusive = true }
+                        navController.navigate(Routes.DASHBOARD) {
+                            popUpTo(Routes.LANDING) { inclusive = true }
                         }
                     }
                 )
             }
 
-            composable<Dashboard> {
+            composable(Routes.DASHBOARD) {
                 DashboardDestination(
                     onUtilitiesClick = {
-                        navController.navigate(Utility)
+                        navController.navigate(Routes.UTILITY)
                     },
                     onLogout = {
-                        navController.navigate(Landing) {
-                            popUpTo(Dashboard) { inclusive = true }
+                        navController.navigate(Routes.LANDING) {
+                            popUpTo(Routes.DASHBOARD) { inclusive = true }
                         }
                     },
                     onDebitCheckClick = {
-                        navController.navigate(CheckDebitTransaction)
+                        navController.navigate(Routes.CHECK_DEBIT)
                     },
                     onEnableMoneyGuard = {
-                        navController.navigate(MoneyGuard)
+                        navController.navigate(Routes.MONEY_GUARD)
                     },
                     onClaimClick = {
-                        navController.navigate(Claim)
+                        navController.navigate(Routes.CLAIM)
                     },
                     onTypingProfileClick = {
-                        navController.popBackStack()
-                    })
+                        navController.navigate(Routes.TYPING_PROFILE)
+                    }
+                )
             }
 
-            composable<Utility> {
+            composable(Routes.UTILITY) {
                 UtilityScreen(
                     onNavigateToMoneyGuard = {
-                        navController.navigate(MoneyGuard)
+                        navController.navigate(Routes.MONEY_GUARD)
                     },
                     onBack = {
                         navController.popBackStack()
@@ -105,7 +126,7 @@ fun NavigationHost(
                 )
             }
 
-            composable<MoneyGuard> {
+            composable(Routes.MONEY_GUARD) {
                 MoneyGuardNavigation(
                     moneyGuardPolicy = moneyGuardPolicy,
                     token = token,
@@ -115,7 +136,7 @@ fun NavigationHost(
                 )
             }
 
-            composable<CheckDebitTransaction> {
+            composable(Routes.CHECK_DEBIT) {
                 CheckDebitTransactionDestination(
                     onBackClick = {
                         navController.popBackStack()
@@ -123,32 +144,69 @@ fun NavigationHost(
                 )
             }
 
-
-            composable<Claim> {
+            composable(Routes.CLAIM) {
                 ClaimDestination(
                     onBackClick = {
                         navController.popBackStack()
                     },
                     addClaimsClick = {
-                        navController.navigate(SubmitClaim)
+                        navController.navigate(Routes.SUBMIT_CLAIM)
                     },
                     onClaimItemClick = { id ->
-                        navController.navigate(ClaimDetail(claimId = id))
+                        navController.navigate(Routes.getClaimDetailRoute(id))
                     }
                 )
             }
 
-            composable<ClaimDetail> { backStackEntry ->
-                val claimDetail = backStackEntry.toRoute<ClaimDetail>()
+            composable(
+                route = Routes.CLAIM_DETAIL,
+                arguments = listOf(
+                    androidx.navigation.navArgument("claimId") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val claimId = backStackEntry.arguments?.getString("claimId")?.toIntOrNull() ?: 0
                 ClaimDetailDestination(
-                    claimId = claimDetail.claimId,
+                    claimId = claimId,
                     onBackPressed = { navController.popBackStack() }
                 )
             }
 
-            composable<SubmitClaim> {
+            composable(Routes.SUBMIT_CLAIM) {
                 SubmitClaimDestination(
                     onBackPressed = { navController.popBackStack() }
+                )
+            }
+
+            composable(Routes.TYPING_PROFILE) {
+                TypingProfileScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.VERIFY_TYPING_PROFILE,
+                arguments = listOf(
+                    androidx.navigation.navArgument("token") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val token = backStackEntry.arguments?.getString("token") ?: ""
+                VerifyTypingProfileScreen(
+                    token = token,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onVerificationSuccess = {
+                        navController.navigate(Routes.DASHBOARD) {
+                            popUpTo(Routes.LANDING) { inclusive = true }
+                        }
+                    },
+                    onVerificationFailed = {
+                        navController.navigate(Routes.LANDING) {
+                            popUpTo(Routes.LOGIN) { inclusive = true }
+                        }
+                    }
                 )
             }
         }

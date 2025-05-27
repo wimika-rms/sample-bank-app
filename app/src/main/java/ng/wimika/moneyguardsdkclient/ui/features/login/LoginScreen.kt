@@ -52,6 +52,15 @@ import ng.wimika.moneyguardsdkclient.utils.LocationViewModel
 import ng.wimika.moneyguardsdkclient.utils.LocationViewModelFactory
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.navigation.NavController
+//import ng.wimika.moneyguardsdkclient.ui.navigation.VerifyTypingProfile
+import ng.wimika.moneyguardsdkclient.ui.navigation.Screen
+import android.os.Bundle
+import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
+import androidx.navigation.NavOptions
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navOptions
+//import androidx.navigation.compose.navigate
 
 @Serializable
 object Login
@@ -64,10 +73,12 @@ sealed class LoginEvent {
     data class UpdateGeoLocation(val geoLocation: GeoLocation) : LoginEvent()
     data class ContinueLoginWithFlaggedLocation(val token: String): LoginEvent()
     data object DismissDangerousLocationModal : LoginEvent()
+    data class VerifyIdentity(val token: String): LoginEvent()
 }
 
 @Composable
 fun LoginDestination(
+    navController: NavController,
     viewModel: LoginViewModel = viewModel(),
     locationViewModel: LocationViewModel = viewModel(
         factory = LocationViewModelFactory(
@@ -138,6 +149,17 @@ fun LoginDestination(
                         Toast.LENGTH_LONG
                     ).show()
                 }
+
+                is LoginResultEvent.NavigateToVerification -> {
+                    navController.navigate("verify_typing_profile/${event.token}")
+                }
+
+                LoginResultEvent.NavigateToLanding -> {
+                    val navOptions = navOptions {
+                        popUpTo(0) { inclusive = true }
+                    }
+                    navController.navigate("landing", navOptions)
+                }
             }
         }
     }
@@ -173,17 +195,17 @@ fun LoginScreen(
                                 "• Unusual login location\n" +
                                 "• High-risk area\n" +
                                 "• Previous security incidents\n\n" +
-                                "Would you like to continue with the login process?")
+                                "Please verify your identity to continue.")
                     },
                     confirmButton = {
                         Button(
                             onClick = {
                                 loginState.token?.let {
-                                    onEvent(LoginEvent.ContinueLoginWithFlaggedLocation(it))
+                                    onEvent(LoginEvent.VerifyIdentity(it))
                                 }
                             }
                         ) {
-                            Text("Continue")
+                            Text("Verify")
                         }
                     },
                     dismissButton = {

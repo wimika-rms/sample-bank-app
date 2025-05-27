@@ -34,7 +34,7 @@ class StartupRiskViewModel: ViewModel() {
             checkStartupRisks()
         }
         .stateIn(viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
+            SharingStarted.WhileSubscribed(1000),
             StartupRiskState()
         )
 

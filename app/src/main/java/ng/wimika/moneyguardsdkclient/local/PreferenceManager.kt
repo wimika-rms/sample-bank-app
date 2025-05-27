@@ -8,6 +8,7 @@ class PreferenceManager(private val context: Context): IPreferenceManager {
 
     companion object {
         private const val MONEY_GUARD_TOKEN = "moneyguard_token"
+        private const val USER_FIRST_NAME = "user_first_name"
     }
 
     private val sharedPreferences: SharedPreferences by lazy {
@@ -20,6 +21,14 @@ class PreferenceManager(private val context: Context): IPreferenceManager {
 
     override fun getMoneyGuardToken(): String? {
         return sharedPreferences.getString(MONEY_GUARD_TOKEN, null)
+    }
+
+    override fun saveUserFirstName(firstName: String?) {
+        sharedPreferences.edit { putString(USER_FIRST_NAME, firstName) }
+    }
+
+    override fun getUserFirstName(): String? {
+        return sharedPreferences.getString(USER_FIRST_NAME, null)
     }
 
     override fun clear() {

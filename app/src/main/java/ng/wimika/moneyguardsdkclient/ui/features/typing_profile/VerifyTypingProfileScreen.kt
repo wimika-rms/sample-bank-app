@@ -19,17 +19,21 @@ import android.text.InputType
 import ng.wimika.moneyguard_sdk.MoneyGuardSdk
 import ng.wimika.moneyguardsdkclient.ui.LocalToken
 import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
+import android.util.Log
+import androidx.navigation.NavBackStackEntry
 
-private const val TYPING_PROFILE_INPUT_ID = 1001
+private const val TYPING_PROFILE_INPUT_ID = 1002
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TypingProfileScreen(
+fun VerifyTypingProfileScreen(
     viewModel: TypingProfileViewModel = viewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onVerificationSuccess: () -> Unit,
+    onVerificationFailed: () -> Unit,
+    token: String = ""
 ) {
     val context = LocalContext.current
-    val token = LocalToken.current ?: ""
     var text by remember { mutableStateOf("") }
     var showResultDialog by remember { mutableStateOf(false) }
     var showValidationDialog by remember { mutableStateOf(false) }
@@ -52,7 +56,7 @@ fun TypingProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Typing Profile Enrollment") },
+                title = { Text("Verify Typing Profile") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -84,7 +88,7 @@ fun TypingProfileScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         Text(
-                            text = "Please type the following text:",
+                            text = "Please type the following text to verify your identity:",
                             style = MaterialTheme.typography.bodyLarge,
                             textAlign = TextAlign.Center
                         )
@@ -102,15 +106,20 @@ fun TypingProfileScreen(
                                     id = TYPING_PROFILE_INPUT_ID
                                     hint = "Type the text above"
                                     setText(text)
-                                    // Disable auto-complete, predictive text, and emojis
                                     inputType = InputType.TYPE_CLASS_TEXT or 
                                               InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or
                                               InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
                                     addTextChangedListener(object : TextWatcher {
-                                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-                                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                                            Log.d("VerifyTypingProfile", "beforeTextChanged: $s")
+                                        }
+                                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                                            Log.d("VerifyTypingProfile", "onTextChanged: $s")
+                                        }
                                         override fun afterTextChanged(s: Editable?) {
+                                            Log.d("VerifyTypingProfile", "afterTextChanged: ${s?.toString()}")
                                             text = s?.toString() ?: ""
+                                            Log.d("VerifyTypingProfile", "Updated text state: $text")
                                         }
                                     })
                                     editText = this
@@ -142,7 +151,7 @@ fun TypingProfileScreen(
                                     color = MaterialTheme.colorScheme.onPrimary
                                 )
                             } else {
-                                Text("Enroll Typing Profile")
+                                Text("Verify")
                             }
                         }
                     }
@@ -199,18 +208,30 @@ fun TypingProfileScreen(
                 val sdk = MoneyGuardSdk.initialize(context)
                 val typingProfile = sdk.getTypingProfile()
                 typingProfile.resetService()
+                
+                // Handle verification result
+                if (result?.matched == true) {
+                    onVerificationSuccess()
+                } else {
+                    onVerificationFailed()
+                }
             },
-            title = { Text("Typing Profile Result") },
+            title = { Text("Verification Result") },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ResultItem("Success", result?.success.toString())
-                    ResultItem("Matched", result?.matched.toString())
-                    ResultItem("High Confidence", result?.highConfidence.toString())
-                    ResultItem("Enrolled on this device", result?.isEnrolledOnThisDevice.toString())
-                    ResultItem("Has other enrollments", result?.hasOtherEnrollments.toString())
-                    result?.message?.let { ResultItem("Message", it) }
+                    Text(
+                        text = if (result?.matched == true) 
+                            "Verification successful! You can proceed with login."
+                        else 
+                            "Verification failed. Please try again.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (result?.matched == true) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.error
+                    )
                 }
             },
             confirmButton = {
@@ -223,6 +244,13 @@ fun TypingProfileScreen(
                         val sdk = MoneyGuardSdk.initialize(context)
                         val typingProfile = sdk.getTypingProfile()
                         typingProfile.resetService()
+                        
+                        // Handle verification result
+                        if (result?.matched == true) {
+                            onVerificationSuccess()
+                        } else {
+                            onVerificationFailed()
+                        }
                     }
                 ) {
                     Text("OK")
@@ -230,23 +258,10 @@ fun TypingProfileScreen(
             }
         )
     }
-}
 
-@Composable
-private fun ResultItem(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+    // Add LaunchedEffect to monitor state changes
+    LaunchedEffect(text, token, isLoading) {
+        Log.d("VerifyTypingProfile", "State changed - text: '$text', token: '$token', isLoading: $isLoading")
+        Log.d("VerifyTypingProfile", "Button enabled: ${text.isNotEmpty() && token.isNotEmpty() && !isLoading}")
     }
 } 

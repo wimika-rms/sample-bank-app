@@ -20,7 +20,7 @@ class TypingProfileViewModel : ViewModel() {
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    fun matchTypingProfile(text: String, context: Context) {
+    fun matchTypingProfile(text: String, context: Context, token: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
@@ -28,7 +28,7 @@ class TypingProfileViewModel : ViewModel() {
                 
                 val sdk = MoneyGuardSdk.initialize(context)
                 val typingProfile = sdk.getTypingProfile()
-                val result = typingProfile.matchTypingProfile(text)
+                val result = typingProfile.matchTypingProfile(text, token)
                 _result.value = result
             } catch (e: Exception) {
                 _error.value = e.message ?: "An error occurred while matching typing profile"
@@ -36,6 +36,10 @@ class TypingProfileViewModel : ViewModel() {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setError(errorMessage: String) {
+        _error.value = errorMessage
     }
 
     fun clearError() {
