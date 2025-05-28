@@ -1,6 +1,7 @@
 package ng.wimika.moneyguardsdkclient.ui.features.dashboard
 
 import android.Manifest
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.serialization.Serializable
+import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.widgets.AccountDetailsCard
 import ng.wimika.moneyguardsdkclient.ui.features.dashboard.widgets.QuickActionsCard
 import ng.wimika.moneyguardsdkclient.ui.features.login.LoginViewModel
@@ -47,8 +50,21 @@ fun DashboardDestination(
     onDebitCheckClick: () -> Unit,
     onClaimClick: () -> Unit,
     onTypingProfileClick: () -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    token: String = ""
 ) {
+    val context = LocalContext.current
+    
+    Log.d("TokenDebug-Dashboard", "Received token: $token")
+    
+    LaunchedEffect(token) {
+        Log.d("TokenDebug-Dashboard", "LaunchedEffect triggered with token: $token")
+        if (token.isNotEmpty()) {
+            Log.d("TokenDebug-Dashboard", "Saving token to preferences")
+            MoneyGuardClientApp.preferenceManager?.saveMoneyGuardToken(token)
+        }
+    }
+
     DashboardScreen(
         onUtilitiesClick = onUtilitiesClick,
         onDebitCheckClick = onDebitCheckClick,

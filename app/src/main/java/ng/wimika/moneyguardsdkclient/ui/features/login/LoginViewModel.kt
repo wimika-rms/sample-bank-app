@@ -281,6 +281,9 @@ class LoginViewModel : ViewModel() {
                                         val isLocationSafe = checkLocationSafety(session.token, locationCheck)
                                         if (isLocationSafe) {
                                             Log.d("LoginViewModel", "Location is safe, proceeding to dashboard")
+                                            _loginState.update { state ->
+                                                state.copy(sessionId = session.token)
+                                            }
                                             _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
                                         } else {
                                             Log.d("LoginViewModel", "Location is unsafe, showing modal")

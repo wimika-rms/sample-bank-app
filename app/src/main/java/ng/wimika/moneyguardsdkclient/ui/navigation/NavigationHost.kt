@@ -1,5 +1,6 @@
 package ng.wimika.moneyguardsdkclient.ui.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavHostController
@@ -36,7 +37,7 @@ object Routes {
     const val STARTUP_RISK = "startup_risk"
     const val LANDING = "landing"
     const val LOGIN = "login"
-    const val DASHBOARD = "dashboard"
+    const val DASHBOARD = "dashboard/{token}"
     const val UTILITY = "utility"
     const val MONEY_GUARD = "money_guard"
     const val CHECK_DEBIT = "check_debit"
@@ -71,11 +72,19 @@ fun NavigationHost(
                 )
             }
 
-            composable(Routes.LANDING) {
+            composable(
+                route = Routes.LANDING,
+                arguments = listOf(
+                    androidx.navigation.navArgument("token") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val token = backStackEntry.arguments?.getString("token") ?: ""
+                Log.d("TokenDebug-NavigationHost", "Extracted token from navigation: $token")
                 LandingScreen(
                     gotoLoginClick = {
                         navController.navigate(Routes.LOGIN)
-                    }
+                    },
+                    token = token
                 )
             }
 
@@ -83,21 +92,29 @@ fun NavigationHost(
                 LoginDestination(
                     navController = navController,
                     onLoginSuccess = {
-                        navController.navigate(Routes.DASHBOARD) {
+                        Log.d("TokenDebug-NavigationHost", "Login success, navigating to dashboard with token: $token")
+                        navController.navigate("dashboard/${token}") {
                             popUpTo(Routes.LANDING) { inclusive = true }
                         }
                     }
                 )
             }
 
-            composable(Routes.DASHBOARD) {
+            composable(
+                route = Routes.DASHBOARD,
+                arguments = listOf(
+                    androidx.navigation.navArgument("token") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val token = backStackEntry.arguments?.getString("token") ?: ""
+                Log.d("TokenDebug-NavigationHost", "Extracted token for dashboard: $token")
                 DashboardDestination(
                     onUtilitiesClick = {
                         navController.navigate(Routes.UTILITY)
                     },
                     onLogout = {
-                        navController.navigate(Routes.LANDING) {
-                            popUpTo(Routes.DASHBOARD) { inclusive = true }
+                        navController.navigate(Routes.STARTUP_RISK) {
+                            popUpTo(0) { inclusive = true }
                         }
                     },
                     onDebitCheckClick = {
@@ -111,7 +128,8 @@ fun NavigationHost(
                     },
                     onTypingProfileClick = {
                         navController.navigate(Routes.TYPING_PROFILE)
-                    }
+                    },
+                    token = token
                 )
             }
 
@@ -198,7 +216,7 @@ fun NavigationHost(
                         navController.popBackStack()
                     },
                     onVerificationSuccess = {
-                        navController.navigate(Routes.DASHBOARD) {
+                        navController.navigate("dashboard/${token}") {
                             popUpTo(Routes.LANDING) { inclusive = true }
                         }
                     },

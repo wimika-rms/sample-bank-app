@@ -1,5 +1,6 @@
 package ng.wimika.moneyguardsdkclient.ui.features.landing
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,22 +14,38 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.serialization.Serializable
 import ng.wimika.moneyguardsdkclient.R
 import ng.wimika.moneyguardsdkclient.ui.features.landing.FeatureCategory
+import ng.wimika.moneyguardsdkclient.MoneyGuardClientApp
 
 @Serializable
 object Landing
 
 @Composable
 fun LandingScreen(
-    gotoLoginClick: (() -> Unit)? = null
+    gotoLoginClick: () -> Unit,
+    token: String = ""
 ) {
+    val context = LocalContext.current
+    
+    Log.d("TokenDebug-LandingScreen", "Received token: $token")
+    
+    LaunchedEffect(token) {
+        Log.d("TokenDebug-LandingScreen", "LaunchedEffect triggered with token: $token")
+        if (token.isNotEmpty()) {
+            Log.d("TokenDebug-LandingScreen", "Saving token to preferences")
+            MoneyGuardClientApp.preferenceManager?.saveMoneyGuardToken(token)
+        }
+    }
+
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -54,7 +71,7 @@ fun LandingScreen(
                         modifier = Modifier.weight(1f),
                         title = "Login",
                         icon = Icons.Default.AccountCircle,
-                        onClick = { gotoLoginClick?.invoke() }
+                        onClick = { gotoLoginClick.invoke() }
                     )
                 }
             }
@@ -66,6 +83,8 @@ fun LandingScreen(
 @Composable
 private fun LandingScreenPreview() {
     MaterialTheme {
-        LandingScreen()
+        LandingScreen(
+            gotoLoginClick = { }
+        )
     }
 }

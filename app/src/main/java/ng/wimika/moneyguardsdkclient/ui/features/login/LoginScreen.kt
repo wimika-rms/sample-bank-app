@@ -60,9 +60,12 @@ import androidx.navigation.NavOptions
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import android.util.Log
+import ng.wimika.moneyguardsdkclient.ui.navigation.Routes
 
 @Serializable
 object Login
+
+var tokenStr = "";
 
 @Composable
 fun LoginScreen(
@@ -273,8 +276,10 @@ fun LoginDestination(
                 }
 
                 is LoginResultEvent.LoginSuccessful -> {
-                    Log.d("LoginDestination", "Login successful, navigating to dashboard")
-                    onLoginSuccess()
+                    Log.d("LoginDestination", "Login successful, navigating to dashboard with token: ${event.token}")
+                    navController.navigate("dashboard/${event.token}") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
 
                 is LoginResultEvent.LoginFailed -> {
@@ -291,11 +296,11 @@ fun LoginDestination(
                 }
 
                 LoginResultEvent.NavigateToLanding -> {
-                    Log.d("LoginDestination", "Navigating to landing")
+                    Log.d("TokenDebug-LoginDestination", "Navigating to landing with token: ${state.sessionId}")
                     val navOptions = navOptions {
                         popUpTo(0) { inclusive = true }
                     }
-                    navController.navigate("landing", navOptions)
+                    navController.navigate("landing/${state.sessionId}", navOptions)
                 }
             }
         }
