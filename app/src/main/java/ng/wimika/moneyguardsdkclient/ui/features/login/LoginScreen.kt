@@ -53,128 +53,66 @@ import ng.wimika.moneyguardsdkclient.utils.LocationViewModelFactory
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.navigation.NavController
-//import ng.wimika.moneyguardsdkclient.ui.navigation.VerifyTypingProfile
 import ng.wimika.moneyguardsdkclient.ui.navigation.Screen
 import android.os.Bundle
 import ng.wimika.moneyguardsdkclient.ui.features.landing.Landing
 import androidx.navigation.NavOptions
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
-//import androidx.navigation.compose.navigate
+import android.util.Log
 
 @Serializable
 object Login
 
-sealed class LoginEvent {
-    data object OnLoginClick : LoginEvent()
-    data class OnEmailChange(val email: String) : LoginEvent()
-    data class OnPasswordChange(val password: String) : LoginEvent()
-    data object OnPasswordVisibilityToggle : LoginEvent()
-    data class UpdateGeoLocation(val geoLocation: GeoLocation) : LoginEvent()
-    data class ContinueLoginWithFlaggedLocation(val token: String): LoginEvent()
-    data object DismissDangerousLocationModal : LoginEvent()
-    data class VerifyIdentity(val token: String): LoginEvent()
-}
-
-@Composable
-fun LoginDestination(
-    navController: NavController,
-    viewModel: LoginViewModel = viewModel(),
-    locationViewModel: LocationViewModel = viewModel(
-        factory = LocationViewModelFactory(
-            context = LocalContext.current,
-            locationManager = LocalContext.current.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        )
-    ),
-    onLoginSuccess: () -> Unit
-) {
-    val state by viewModel.loginState.collectAsStateWithLifecycle()
-    val locationState by locationViewModel.locationState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    var hasLocationPermissions by remember {
-        mutableStateOf(
-            PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                    && PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_COARSE_LOCATION)
-        )
-    }
-
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        hasLocationPermissions = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-    }
-
-    LaunchedEffect(hasLocationPermissions) {
-        if (!hasLocationPermissions) {
-            locationPermissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-            return@LaunchedEffect
-        }
-
-        locationViewModel.getCurrentLocation()
-    }
-
-    LaunchedEffect(locationState) {
-        locationState?.let { location ->
-            viewModel.onEvent(LoginEvent.UpdateGeoLocation(location))
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        viewModel.loginResultEvent.collect { event ->
-            when(event) {
-                is LoginResultEvent.CredentialCheckSuccessful -> {
-                    Toast.makeText(
-                        context,
-                        "Credential check: ${event.result.name}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    // Wait for toast to be shown before navigating
-                    delay(2000)
-                }
-
-                is LoginResultEvent.LoginSuccessful -> {
-                    onLoginSuccess()
-                }
-
-                is LoginResultEvent.LoginFailed -> {
-                    Toast.makeText(
-                        context,
-                        event.error,
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-
-                is LoginResultEvent.NavigateToVerification -> {
-                    navController.navigate("verify_typing_profile/${event.token}")
-                }
-
-                LoginResultEvent.NavigateToLanding -> {
-                    val navOptions = navOptions {
-                        popUpTo(0) { inclusive = true }
-                    }
-                    navController.navigate("landing", navOptions)
-                }
-            }
-        }
-    }
-
-    LoginScreen(
-        loginState = state,
-        onEvent = viewModel::onEvent
-    )
-}
-
 @Composable
 fun LoginScreen(
     loginState: LoginState,
-    onEvent: (LoginEvent) -> Unit
+    onEvent: (LoginEvent) -> Unit,
+    showDangerousLocationModal: Pair<Boolean, String?>
 ) {
+    Log.d("LoginScreen", "Rendering with state: $loginState, modal state: $showDangerousLocationModal")
+    
+    // Show modal if needed
+    if (showDangerousLocationModal.first) {
+        Log.d("LoginScreen", "Showing dangerous location modal")
+        AlertDialog(
+            onDismissRequest = {
+                Log.d("LoginScreen", "Modal dismissed")
+                onEvent(LoginEvent.DismissDangerousLocationModal)
+            },
+            title = { Text("Warning: Suspicious Location") },
+            text = {
+                Text("We've detected that you're logging in from a location that has been flagged as suspicious. This could be due to:\n\n" +
+                        "• Unusual login location\n" +
+                        "• High-risk area\n" +
+                        "• Previous security incidents\n\n" +
+                        "Please verify your identity to continue.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        Log.d("LoginScreen", "Verify button clicked")
+                        showDangerousLocationModal.second?.let {
+                            onEvent(LoginEvent.VerifyIdentity(it))
+                        }
+                    }
+                ) {
+                    Text("Verify")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        Log.d("LoginScreen", "Cancel button clicked")
+                        onEvent(LoginEvent.DismissDangerousLocationModal)
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Surface(
         modifier = Modifier
     ) {
@@ -184,42 +122,6 @@ fun LoginScreen(
                 .fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            if (loginState.showDangerousLocationModal) {
-                AlertDialog(
-                    onDismissRequest = {
-                        onEvent(LoginEvent.DismissDangerousLocationModal)
-                    },
-                    title = { Text("Warning: Suspicious Location") },
-                    text = {
-                        Text("We've detected that you're logging in from a location that has been flagged as suspicious. This could be due to:\n\n" +
-                                "• Unusual login location\n" +
-                                "• High-risk area\n" +
-                                "• Previous security incidents\n\n" +
-                                "Please verify your identity to continue.")
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = {
-                                loginState.token?.let {
-                                    onEvent(LoginEvent.VerifyIdentity(it))
-                                }
-                            }
-                        ) {
-                            Text("Verify")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = {
-                                onEvent(LoginEvent.DismissDangerousLocationModal)
-                            }
-                        ) {
-                            Text("Cancel")
-                        }
-                    }
-                )
-            }
-
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.Start,
@@ -286,12 +188,6 @@ fun LoginScreen(
                     }
                 }
 
-                if (loginState.sessionId != null) {
-//                    Text("Logged in: Successful",
-//                        color = Color.DarkGray
-//                    )
-                }
-
                 if (loginState.errorMessage != null) {
                     Text(
                         text = loginState.errorMessage,
@@ -302,7 +198,7 @@ fun LoginScreen(
 
             // Version number in bottom right
             Text(
-                text = "v0.2.3",
+                text = "v0.2.4",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                 modifier = Modifier
@@ -313,15 +209,113 @@ fun LoginScreen(
     }
 }
 
+@Composable
+fun LoginDestination(
+    navController: NavController,
+    viewModel: LoginViewModel = viewModel(),
+    locationViewModel: LocationViewModel = viewModel(
+        factory = LocationViewModelFactory(
+            context = LocalContext.current,
+            locationManager = LocalContext.current.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        )
+    ),
+    onLoginSuccess: () -> Unit
+) {
+    val state by viewModel.loginState.collectAsStateWithLifecycle()
+    val modalState by viewModel.showDangerousLocationModal.collectAsStateWithLifecycle()
+    val locationState by locationViewModel.locationState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    var hasLocationPermissions by remember {
+        mutableStateOf(
+            PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                    && PermissionUtils.isPermissionGranted(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+        )
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasLocationPermissions = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true &&
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+    }
+
+    LaunchedEffect(hasLocationPermissions) {
+        if (!hasLocationPermissions) {
+            locationPermissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+            return@LaunchedEffect
+        }
+
+        locationViewModel.getCurrentLocation()
+    }
+
+    LaunchedEffect(locationState) {
+        locationState?.let { location ->
+            viewModel.onEvent(LoginEvent.UpdateGeoLocation(location))
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.loginResultEvent.collect { event ->
+            Log.d("LoginDestination", "Received login result event: $event")
+            when(event) {
+                is LoginResultEvent.CredentialCheckSuccessful -> {
+                    Toast.makeText(
+                        context,
+                        "Credential check: ${event.result.name}",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+                is LoginResultEvent.LoginSuccessful -> {
+                    Log.d("LoginDestination", "Login successful, navigating to dashboard")
+                    onLoginSuccess()
+                }
+
+                is LoginResultEvent.LoginFailed -> {
+                    Toast.makeText(
+                        context,
+                        event.error,
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+                is LoginResultEvent.NavigateToVerification -> {
+                    Log.d("LoginDestination", "Navigating to verification")
+                    navController.navigate("verify_typing_profile/${event.token}")
+                }
+
+                LoginResultEvent.NavigateToLanding -> {
+                    Log.d("LoginDestination", "Navigating to landing")
+                    val navOptions = navOptions {
+                        popUpTo(0) { inclusive = true }
+                    }
+                    navController.navigate("landing", navOptions)
+                }
+            }
+        }
+    }
+
+    LoginScreen(
+        loginState = state,
+        onEvent = viewModel::onEvent,
+        showDangerousLocationModal = modalState
+    )
+}
+
 @Preview
 @Composable
 private fun LoginScreenPreview() {
     MaterialTheme {
         LoginScreen(
             loginState = LoginState(),
-            onEvent = {
-
-            }
+            onEvent = { },
+            showDangerousLocationModal = false to null
         )
     }
 }

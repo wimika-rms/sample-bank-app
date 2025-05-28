@@ -42,11 +42,13 @@ fun TypingProfileScreen(
     val firstName = MoneyGuardClientApp.preferenceManager?.getUserFirstName() ?: "User"
     val expectedText = "hello, my name is $firstName"
 
-    // Start the typing profile service when screen loads
-    LaunchedEffect(Unit) {
-        val sdk = MoneyGuardSdk.initialize(context)
-        val typingProfile = sdk.getTypingProfile()
-        typingProfile.startService(context as android.app.Activity, intArrayOf(TYPING_PROFILE_INPUT_ID))
+    // Start the typing profile service when EditText is created
+    LaunchedEffect(editText) {
+        editText?.let {
+            val sdk = MoneyGuardSdk.initialize(context)
+            val typingProfile = sdk.getTypingProfile()
+            typingProfile.startService(context as android.app.Activity, intArrayOf(TYPING_PROFILE_INPUT_ID))
+        }
     }
 
     Scaffold(

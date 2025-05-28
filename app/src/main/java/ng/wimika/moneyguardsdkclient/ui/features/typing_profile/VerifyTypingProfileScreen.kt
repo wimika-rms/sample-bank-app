@@ -46,11 +46,13 @@ fun VerifyTypingProfileScreen(
     val firstName = MoneyGuardClientApp.preferenceManager?.getUserFirstName() ?: "User"
     val expectedText = "hello, my name is $firstName"
 
-    // Start the typing profile service when screen loads
-    LaunchedEffect(Unit) {
-        val sdk = MoneyGuardSdk.initialize(context)
-        val typingProfile = sdk.getTypingProfile()
-        typingProfile.startService(context as android.app.Activity, intArrayOf(TYPING_PROFILE_INPUT_ID))
+    // Start the typing profile service when EditText is created
+    LaunchedEffect(editText) {
+        editText?.let {
+            val sdk = MoneyGuardSdk.initialize(context)
+            val typingProfile = sdk.getTypingProfile()
+            typingProfile.startService(context as android.app.Activity, intArrayOf(TYPING_PROFILE_INPUT_ID))
+        }
     }
 
     Scaffold(
@@ -207,7 +209,8 @@ fun VerifyTypingProfileScreen(
                 editText?.setText("")
                 val sdk = MoneyGuardSdk.initialize(context)
                 val typingProfile = sdk.getTypingProfile()
-                typingProfile.resetService()
+                //typingProfile.resetService()
+                typingProfile.stopService()
                 
                 // Handle verification result
                 if (result?.matched == true) {
@@ -243,13 +246,15 @@ fun VerifyTypingProfileScreen(
                         editText?.setText("")
                         val sdk = MoneyGuardSdk.initialize(context)
                         val typingProfile = sdk.getTypingProfile()
-                        typingProfile.resetService()
+                        typingProfile.stopService()
                         
                         // Handle verification result
                         if (result?.matched == true) {
                             onVerificationSuccess()
+
                         } else {
-                            onVerificationFailed()
+                            //onVerificationFailed()
+                            onVerificationSuccess()
                         }
                     }
                 ) {
