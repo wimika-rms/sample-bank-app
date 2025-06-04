@@ -707,8 +707,8 @@ try {
 ## Support
 
 For support and questions, please contact:
-- Email: support@moneyguard.com
-- Website: https://moneyguard.com
+- Email: 
+- Website: 
 
 ## License
 
