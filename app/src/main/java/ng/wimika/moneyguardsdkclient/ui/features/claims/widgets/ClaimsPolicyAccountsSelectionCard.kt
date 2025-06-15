@@ -134,7 +134,7 @@ private fun ClaimsPolicyAccountsSelectionCardWithAccountsPreview() {
                 type = "Savings",
                 name = "nv",
                 defaultDebit = false,
-                hasAcivePolicy = true
+                hasActivePolicy = true
             ),
             BankAccount(
                 id = 2,
@@ -143,7 +143,7 @@ private fun ClaimsPolicyAccountsSelectionCardWithAccountsPreview() {
                 type = "Current",
                 name = "nv",
                 defaultDebit = false,
-                hasAcivePolicy = true
+                hasActivePolicy = true
             )
         )
 
@@ -167,7 +167,7 @@ private fun ClaimsPolicyAccountsSelectionCardWithSelectedAccountPreview() {
                 type = "Savings",
                 name = "nv",
                 defaultDebit = false,
-                hasAcivePolicy = true
+                hasActivePolicy = true
             ),
             BankAccount(
                 id = 2,
@@ -176,7 +176,7 @@ private fun ClaimsPolicyAccountsSelectionCardWithSelectedAccountPreview() {
                 type = "Current",
                 name = "nv",
                 defaultDebit = false,
-                hasAcivePolicy = true
+                hasActivePolicy = true
             )
         )
         ClaimsPolicyAccountsSelectionCard(
