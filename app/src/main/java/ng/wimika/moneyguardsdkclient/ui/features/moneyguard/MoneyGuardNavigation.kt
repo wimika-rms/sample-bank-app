@@ -31,7 +31,8 @@ fun MoneyGuardNavigation(
     navController: NavHostController = rememberNavController(),
     moneyGuardPolicy: MoneyGuardPolicy,
     token: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onGoToDashboard: () -> Unit
 ) {
     var selectedAccounts: List<BankAccount> by remember { mutableStateOf(emptyList()) }
     var selectedPolicyOption: PolicyOption? by remember { mutableStateOf(null) }
@@ -135,7 +136,7 @@ fun MoneyGuardNavigation(
                         text = { Text(successMessage ?: "Policy created successfully!") },
                         confirmButton = {
                             Button(
-                                onClick = { onBack() }
+                                onClick = { onGoToDashboard() }
                             ) {
                                 Text("Go to Dashboard")
                             }
@@ -153,7 +154,7 @@ fun MoneyGuardNavigation(
                             text = { Text(successMessage ?: "Policy created successfully!") },
                             confirmButton = {
                                 Button(
-                                    onClick = { onBack() }
+                                    onClick = { onGoToDashboard() }
                                 ) {
                                     Text("Go to Dashboard")
                                 }

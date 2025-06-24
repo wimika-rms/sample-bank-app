@@ -1,6 +1,9 @@
 package ng.wimika.moneyguardsdkclient.ui.navigation
 
 import android.util.Log
+import android.widget.Toast
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavHostController
@@ -30,8 +33,10 @@ import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetail
 import ng.wimika.moneyguardsdkclient.ui.features.claims.claim_detail.ClaimDetailDestination
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaim
 import ng.wimika.moneyguardsdkclient.ui.features.claims.submit_claims.SubmitClaimDestination
+import ng.wimika.moneyguardsdkclient.ui.features.onboarding_info.OnboardingInfoScreen
 import ng.wimika.moneyguardsdkclient.ui.features.typing_profile.TypingProfileScreen
 import ng.wimika.moneyguardsdkclient.ui.features.typing_profile.VerifyTypingProfileScreen
+import androidx.compose.ui.platform.LocalContext
 
 object Routes {
     const val STARTUP_RISK = "startup_risk"
@@ -46,6 +51,7 @@ object Routes {
     const val SUBMIT_CLAIM = "submit_claim"
     const val TYPING_PROFILE = "typing_profile"
     const val VERIFY_TYPING_PROFILE = "verify_typing_profile/{token}"
+    const val ONBOARDING_INFO = "onboarding_info"
 
     fun getClaimDetailRoute(claimId: Int): String {
         return CLAIM_DETAIL.replace("{claimId}", claimId.toString())
@@ -135,8 +141,24 @@ fun NavigationHost(
 
             composable(Routes.UTILITY) {
                 UtilityScreen(
-                    onNavigateToMoneyGuard = {
+                    onNavigateToOnboarding = {
+                        navController.navigate(Routes.ONBOARDING_INFO)
+                    },
+                    onBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(Routes.ONBOARDING_INFO) {
+                val context = LocalContext.current
+                OnboardingInfoScreen(
+                    onGetStarted = {
                         navController.navigate(Routes.MONEY_GUARD)
+                    },
+                    onLearnMore = { url ->
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        context.startActivity(intent)
                     },
                     onBack = {
                         navController.popBackStack()
@@ -150,6 +172,11 @@ fun NavigationHost(
                     token = token,
                     onBack = {
                         navController.popBackStack()
+                    },
+                    onGoToDashboard = {
+                        navController.navigate("dashboard/${token}") {
+                            popUpTo(Routes.DASHBOARD) { inclusive = true }
+                        }
                     }
                 )
             }

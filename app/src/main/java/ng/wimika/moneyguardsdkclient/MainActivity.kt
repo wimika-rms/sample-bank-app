@@ -15,6 +15,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.compose.rememberNavController
 import ng.wimika.moneyguard_sdk.services.MoneyGuardSdkService
 import ng.wimika.moneyguard_sdk.services.authentication.MoneyGuardAuthentication
+import ng.wimika.moneyguard_sdk.services.onboarding_info.OnboardingInfo
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
 import ng.wimika.moneyguardsdkclient.local.IPreferenceManager
@@ -37,6 +38,10 @@ class MainActivity : ComponentActivity() {
 
     private val sdkPolicy: MoneyGuardPolicy? by lazy {
         sdkService?.policy()
+    }
+
+    private val sdkOnboardingInfo: OnboardingInfo? by lazy {
+        sdkService?.onboardingInfo()
     }
 
     private val preferenceManager: IPreferenceManager? by lazy {
@@ -65,7 +70,8 @@ class MainActivity : ComponentActivity() {
 
             CompositionLocalProvider(
                 LocalMoneyGuardUtility provides sdkUtils,
-                LocalMoneyGuardAuthentication provides sdkAuth
+                LocalMoneyGuardAuthentication provides sdkAuth,
+                LocalMoneyGuardOnboardingInfo provides sdkOnboardingInfo
             ) {
                 MoneyGuardSdkClientTheme {
                     val navigationController = rememberNavController()
@@ -87,5 +93,9 @@ val LocalMoneyGuardUtility = staticCompositionLocalOf<MoneyGuardUtility?> {
 
 val LocalMoneyGuardAuthentication = staticCompositionLocalOf<MoneyGuardAuthentication?> {
     error("No MoneyGuardAuthentication provided")
+}
+
+val LocalMoneyGuardOnboardingInfo = staticCompositionLocalOf<OnboardingInfo?> {
+    error("No OnboardingInfo provided")
 }
 
