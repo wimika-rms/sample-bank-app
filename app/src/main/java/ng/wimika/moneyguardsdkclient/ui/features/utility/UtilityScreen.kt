@@ -23,7 +23,7 @@ object Utility
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UtilityScreen(
-    onNavigateToMoneyGuard: () -> Unit,
+    onNavigateToOnboarding: () -> Unit,
     onBack: () -> Unit
 ) {
     val sdkUtils: MoneyGuardUtility? = LocalMoneyGuardUtility.current
@@ -80,7 +80,7 @@ fun UtilityScreen(
             // Show Enable MoneyGuard button if status is InActive or NoPolicyAppInstalled
             if (moneyGuardStatus == MoneyGuardAppStatus.InActive || 
                 moneyGuardStatus == MoneyGuardAppStatus.NoPolicyAppInstalled) {
-                Button(onClick = onNavigateToMoneyGuard) {
+                Button(onClick = onNavigateToOnboarding) {
                     Text("Enable MoneyGuard")
                 }
             }

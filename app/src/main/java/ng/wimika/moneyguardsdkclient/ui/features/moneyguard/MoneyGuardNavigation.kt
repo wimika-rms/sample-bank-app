@@ -16,6 +16,7 @@ import androidx.navigation.compose.rememberNavController
 import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.BankAccount
 import ng.wimika.moneyguard_sdk.services.moneyguard_policy.models.PolicyOption
 import ng.wimika.moneyguard_sdk.services.policy.MoneyGuardPolicy
+import ng.wimika.moneyguardsdkclient.ui.LocalToken
 
 sealed class MoneyGuardScreen(val route: String) {
     object AccountSelection : MoneyGuardScreen("account_selection")
@@ -30,11 +31,13 @@ fun MoneyGuardNavigation(
     navController: NavHostController = rememberNavController(),
     moneyGuardPolicy: MoneyGuardPolicy,
     token: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onGoToDashboard: () -> Unit
 ) {
     var selectedAccounts: List<BankAccount> by remember { mutableStateOf(emptyList()) }
     var selectedPolicyOption: PolicyOption? by remember { mutableStateOf(null) }
     val context = LocalContext.current
+    //token = LocalToken.current ?: ""
 
     NavHost(
         navController = navController,
@@ -133,7 +136,7 @@ fun MoneyGuardNavigation(
                         text = { Text(successMessage ?: "Policy created successfully!") },
                         confirmButton = {
                             Button(
-                                onClick = { onBack() }
+                                onClick = { onGoToDashboard() }
                             ) {
                                 Text("Go to Dashboard")
                             }
@@ -151,7 +154,7 @@ fun MoneyGuardNavigation(
                             text = { Text(successMessage ?: "Policy created successfully!") },
                             confirmButton = {
                                 Button(
-                                    onClick = { onBack() }
+                                    onClick = { onGoToDashboard() }
                                 ) {
                                     Text("Go to Dashboard")
                                 }

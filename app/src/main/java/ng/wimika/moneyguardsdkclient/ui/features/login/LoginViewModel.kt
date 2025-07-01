@@ -8,6 +8,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,7 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -34,6 +37,9 @@ import ng.wimika.moneyguardsdkclient.utils.computeSha256Hash
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardAppStatus
 import ng.wimika.moneyguard_sdk.services.utility.MoneyGuardUtility
 import ng.wimika.moneyguard_sdk.services.utility.models.LocationCheck
+import ng.wimika.moneyguardsdkclient.ui.features.login.LoginResultEvent
+import kotlin.Result
+
 
 class LoginViewModel : ViewModel() {
 
@@ -57,28 +63,17 @@ class LoginViewModel : ViewModel() {
     private val _loginResultEvent: MutableSharedFlow<LoginResultEvent> = MutableSharedFlow()
     val loginResultEvent: SharedFlow<LoginResultEvent> = _loginResultEvent.asSharedFlow()
 
+    private val _showDangerousLocationModal = MutableStateFlow<Pair<Boolean, String?>>(false to null)
+    val showDangerousLocationModal: StateFlow<Pair<Boolean, String?>> = _showDangerousLocationModal.asStateFlow()
 
     companion object {
         private const val WIMIKA_BANK = 101
     }
 
-
     fun logOut() {
         viewModelScope.launch {
             moneyGuardAuthentication?.logout()
             preferenceManager?.clear()
-        }
-    }
-
-    private fun onEmailChange(email: String) {
-        _loginState.update { currentState ->
-            currentState.copy(email = email)
-        }
-    }
-
-    private fun onPasswordChange(password: String) {
-        _loginState.update { currentState ->
-            currentState.copy(password = password)
         }
     }
 
@@ -107,22 +102,45 @@ class LoginViewModel : ViewModel() {
             }
 
             is LoginEvent.ContinueLoginWithFlaggedLocation -> {
-                _loginState.update { currentState ->
-                    currentState.copy(token = event.token, showDangerousLocationModal = false)
-                }
-                preferenceManager?.saveMoneyGuardToken(event.token)
+                Log.d("LoginViewModel", "Continuing with flagged location")
+                _showDangerousLocationModal.value = false to null
                 viewModelScope.launch {
                     _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(event.token))
                 }
             }
+
+            is LoginEvent.VerifyIdentity -> {
+                Log.d("LoginViewModel", "Verifying identity")
+                _showDangerousLocationModal.value = false to null
+                viewModelScope.launch {
+                    _loginResultEvent.emit(LoginResultEvent.NavigateToVerification(event.token))
+                }
+            }
+
             LoginEvent.DismissDangerousLocationModal -> {
-                _loginState.update { currentState ->
-                    currentState.copy(showDangerousLocationModal = false)
+                Log.d("LoginViewModel", "Dismissing dangerous location modal")
+                _showDangerousLocationModal.value = false to null
+                viewModelScope.launch {
+                    _loginResultEvent.emit(LoginResultEvent.NavigateToLanding)
                 }
             }
         }
     }
 
+    private suspend fun checkLocationSafety(token: String, locationCheck: LocationCheck): Boolean {
+        return try {
+            Log.d("LoginViewModel", "Starting location safety check")
+            val locationResponse = moneyGuardUtility?.checkLocation(token, locationCheck)
+            Log.d("LoginViewModel", "Got location response: ${locationResponse?.data}")
+            // If response.data is empty, location is safe
+            val isSafe = locationResponse?.data?.isEmpty() ?: true
+            Log.d("LoginViewModel", "Location is ${if (isSafe) "safe" else "unsafe"}")
+            isSafe
+        } catch (e: Exception) {
+            Log.e("LoginViewModel", "Error checking location safety", e)
+            false
+        }
+    }
 
     private fun onLoginClick() {
         viewModelScope.launch {
@@ -146,51 +164,6 @@ class LoginViewModel : ViewModel() {
                 .collect { sessionId ->
                     getMoneyGuardSession(sessionId)
                 }
-        }
-    }
-
-    private fun onLoginSuccess(token: String) {
-        viewModelScope.launch {
-            val currentLocation = loginState.value.geoLocation
-
-            if (currentLocation == null) {
-                _loginResultEvent.emit(LoginResultEvent.LoginFailed(error = "Cannot get your current location"))
-                return@launch
-            }
-
-            val locationCheck = LocationCheck(
-                latitude = currentLocation.lat,
-                longitude = currentLocation.lon
-            )
-
-            moneyGuardUtility?.checkLocation(
-                token,
-                locationCheck = locationCheck,
-                onSuccess = { result ->
-                    viewModelScope.launch {
-                        if (result) {
-                            preferenceManager?.saveMoneyGuardToken(token)
-                            _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(token))
-                        } else {
-                            _loginState.update { currentState ->
-                                currentState.copy(
-                                    token = token,
-                                    showDangerousLocationModal = true
-                                )
-                            }
-                        }
-                    }
-                },
-                onFailure = { error ->
-                    viewModelScope.launch {
-                        _loginResultEvent.emit(
-                            LoginResultEvent.LoginFailed(
-                                error = error.message ?: ""
-                            )
-                        )
-                    }
-                },
-            )
         }
     }
 
@@ -247,6 +220,11 @@ class LoginViewModel : ViewModel() {
 
                                 if (session != null) {
                                     try {
+                                        // Save user's first name
+                                        session.userDetails?.firstName?.let { firstName ->
+                                            preferenceManager?.saveUserFirstName(firstName)
+                                        }
+
                                         // Check MoneyGuard status before performing credential check
                                         val moneyGuardStatus =
                                             moneyGuardUtility?.checkMoneyguardStatus(session.token)
@@ -280,7 +258,6 @@ class LoginViewModel : ViewModel() {
                                                     "Error during credential check",
                                                     e
                                                 )
-                                                // Don't update error state for credential check failures
                                             }
                                         } else {
                                             Log.d(
@@ -289,9 +266,30 @@ class LoginViewModel : ViewModel() {
                                             )
                                         }
 
-                                        // Emit login success after credential check
-                                        onLoginSuccess(session.token)
-                                        //_loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
+                                        // Check location safety
+                                        val currentLocation = loginState.value.geoLocation
+                                        if (currentLocation == null) {
+                                            _loginResultEvent.emit(LoginResultEvent.LoginFailed(error = "Cannot get your current location"))
+                                            return@collect
+                                        }
+
+                                        val locationCheck = LocationCheck(
+                                            latitude = currentLocation.lat,
+                                            longitude = currentLocation.lon
+                                        )
+
+                                        val isLocationSafe = checkLocationSafety(session.token, locationCheck)
+                                        if (isLocationSafe) {
+                                            Log.d("LoginViewModel", "Location is safe, proceeding to dashboard")
+                                            _loginState.update { state ->
+                                                state.copy(sessionId = session.token)
+                                            }
+                                            _loginResultEvent.emit(LoginResultEvent.LoginSuccessful(session.token))
+                                        } else {
+                                            Log.d("LoginViewModel", "Location is unsafe, showing modal")
+                                            _showDangerousLocationModal.value = true to session.token
+                                        }
+
                                     } catch (e: Exception) {
                                         Log.e(
                                             "LoginViewModel",
@@ -315,6 +313,17 @@ class LoginViewModel : ViewModel() {
         }
     }
 
+    private fun onEmailChange(email: String) {
+        _loginState.update { currentState ->
+            currentState.copy(email = email)
+        }
+    }
+
+    private fun onPasswordChange(password: String) {
+        _loginState.update { currentState ->
+            currentState.copy(password = password)
+        }
+    }
 
     private suspend fun performCredentialChecks(
         sessionToken: String,

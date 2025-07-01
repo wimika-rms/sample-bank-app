@@ -382,7 +382,7 @@ fun StartupRiskScreen(
                     )
 
                     // Show proceed button when there are no risks or risks have been acknowledged
-                    Button(
+                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { onEvent(StartupRiskEvent.ProceedToLogin) },
                         colors = ButtonDefaults.buttonColors(
