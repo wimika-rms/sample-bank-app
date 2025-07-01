@@ -12,4 +12,5 @@ data class LoginState(
     val geoLocation: GeoLocation? = null,
     val showDangerousLocationModal: Boolean = false,
     val token: String? = null,
+    val showDisplayOverAppModal: Boolean = false,
 )

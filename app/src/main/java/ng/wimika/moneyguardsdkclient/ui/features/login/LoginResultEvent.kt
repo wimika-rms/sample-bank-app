@@ -9,4 +9,5 @@ sealed class LoginResultEvent {
     data class LoginFailed(val error: String): LoginResultEvent()
     data class NavigateToVerification(val token: String): LoginResultEvent()
     data object NavigateToLanding: LoginResultEvent()
+    data object OpenDisplayOverAppSettings: LoginResultEvent()
 }

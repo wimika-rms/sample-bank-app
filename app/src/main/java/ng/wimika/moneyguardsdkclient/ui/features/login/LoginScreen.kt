@@ -61,6 +61,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navOptions
 import android.util.Log
 import ng.wimika.moneyguardsdkclient.ui.navigation.Routes
+import android.content.Intent
+import android.provider.Settings
 
 @Serializable
 object Login
@@ -71,11 +73,14 @@ var tokenStr = "";
 fun LoginScreen(
     loginState: LoginState,
     onEvent: (LoginEvent) -> Unit,
-    showDangerousLocationModal: Pair<Boolean, String?>
+    showDangerousLocationModal: Pair<Boolean, String?>,
+    showDisplayOverAppModal: Pair<Boolean, String?>
 ) {
     Log.d("LoginScreen", "Rendering with state: $loginState, modal state: $showDangerousLocationModal")
+
+    val context = LocalContext.current
     
-    // Show modal if needed
+    // Show dangerous location modal if needed
     if (showDangerousLocationModal.first) {
         Log.d("LoginScreen", "Showing dangerous location modal")
         AlertDialog(
@@ -96,7 +101,7 @@ fun LoginScreen(
                     onClick = {
                         Log.d("LoginScreen", "Verify button clicked")
                         showDangerousLocationModal.second?.let {
-                            onEvent(LoginEvent.VerifyIdentity(it))
+                            onEvent(LoginEvent.VerifyIdentity(it, context))
                         }
                     }
                 ) {
@@ -108,6 +113,45 @@ fun LoginScreen(
                     onClick = {
                         Log.d("LoginScreen", "Cancel button clicked")
                         onEvent(LoginEvent.DismissDangerousLocationModal)
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Show display over app modal if needed
+    if (showDisplayOverAppModal.first) {
+        Log.d("LoginScreen", "Showing display over app modal")
+        AlertDialog(
+            onDismissRequest = {
+                Log.d("LoginScreen", "Display over app modal dismissed")
+                onEvent(LoginEvent.DismissDisplayOverAppModal)
+            },
+            title = { Text("Permission Required") },
+            text = {
+                Text("To perform verification, we need permission to display over other apps. This allows us to:\n\n" +
+                        "• Monitor typing patterns securely\n" +
+                        "• Ensure verification accuracy\n" +
+                        "• Protect your account\n\n" +
+                        "Search for \"MoneyGuard Sample Bank App\" in your device settings and enable the 'Display over other apps' permission.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        Log.d("LoginScreen", "Proceed to settings clicked")
+                        onEvent(LoginEvent.OpenDisplayOverAppSettings)
+                    }
+                ) {
+                    Text("Proceed to Settings")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        Log.d("LoginScreen", "Dismiss display over app modal clicked")
+                        onEvent(LoginEvent.DismissDisplayOverAppModal)
                     }
                 ) {
                     Text("Cancel")
@@ -226,6 +270,7 @@ fun LoginDestination(
 ) {
     val state by viewModel.loginState.collectAsStateWithLifecycle()
     val modalState by viewModel.showDangerousLocationModal.collectAsStateWithLifecycle()
+    val displayOverAppModalState by viewModel.showDisplayOverAppModal.collectAsStateWithLifecycle()
     val locationState by locationViewModel.locationState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
@@ -263,6 +308,16 @@ fun LoginDestination(
         }
     }
 
+    // Check for display over app permission when returning from settings
+    LaunchedEffect(Unit) {
+        // Check if we have a stored token and permission is granted
+        val storedToken = state.token
+        if (storedToken != null && Settings.canDrawOverlays(context)) {
+            Log.d("LoginDestination", "Permission granted, emitting NavigateToVerification event with token: $storedToken")
+            viewModel.onEvent(LoginEvent.EmitNavigateToVerification(storedToken))
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.loginResultEvent.collect { event ->
             Log.d("LoginDestination", "Received login result event: $event")
@@ -295,6 +350,19 @@ fun LoginDestination(
                     navController.navigate("verify_typing_profile/${event.token}")
                 }
 
+                LoginResultEvent.OpenDisplayOverAppSettings -> {
+                    Log.d("LoginDestination", "Opening display over app settings")
+                    try {
+                        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                        context.startActivity(intent)
+                        // Store the token for when user returns from settings
+                        viewModel.onEvent(LoginEvent.StoreTokenForVerification(displayOverAppModalState.second ?: ""))
+                    } catch (e: Exception) {
+                        Log.e("LoginDestination", "Error opening display over app settings", e)
+                        Toast.makeText(context, "Could not open settings", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
                 LoginResultEvent.NavigateToLanding -> {
                     Log.d("TokenDebug-LoginDestination", "Navigating to landing with token: ${state.sessionId}")
                     val navOptions = navOptions {
@@ -309,7 +377,8 @@ fun LoginDestination(
     LoginScreen(
         loginState = state,
         onEvent = viewModel::onEvent,
-        showDangerousLocationModal = modalState
+        showDangerousLocationModal = modalState,
+        showDisplayOverAppModal = displayOverAppModalState
     )
 }
 
@@ -320,7 +389,8 @@ private fun LoginScreenPreview() {
         LoginScreen(
             loginState = LoginState(),
             onEvent = { },
-            showDangerousLocationModal = false to null
+            showDangerousLocationModal = false to null,
+            showDisplayOverAppModal = false to null
         )
     }
 }

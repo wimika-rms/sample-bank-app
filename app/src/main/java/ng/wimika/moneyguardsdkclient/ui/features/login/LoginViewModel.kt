@@ -66,6 +66,9 @@ class LoginViewModel : ViewModel() {
     private val _showDangerousLocationModal = MutableStateFlow<Pair<Boolean, String?>>(false to null)
     val showDangerousLocationModal: StateFlow<Pair<Boolean, String?>> = _showDangerousLocationModal.asStateFlow()
 
+    private val _showDisplayOverAppModal = MutableStateFlow<Pair<Boolean, String?>>(false to null)
+    val showDisplayOverAppModal: StateFlow<Pair<Boolean, String?>> = _showDisplayOverAppModal.asStateFlow()
+
     companion object {
         private const val WIMIKA_BANK = 101
     }
@@ -112,8 +115,13 @@ class LoginViewModel : ViewModel() {
             is LoginEvent.VerifyIdentity -> {
                 Log.d("LoginViewModel", "Verifying identity")
                 _showDangerousLocationModal.value = false to null
-                viewModelScope.launch {
-                    _loginResultEvent.emit(LoginResultEvent.NavigateToVerification(event.token))
+                if (android.provider.Settings.canDrawOverlays(event.context)) {
+                    Log.d("LoginViewModel", "Permission already granted, emitting NavigateToVerification")
+                    viewModelScope.launch {
+                        _loginResultEvent.emit(LoginResultEvent.NavigateToVerification(event.token))
+                    }
+                } else {
+                    _showDisplayOverAppModal.value = true to event.token
                 }
             }
 
@@ -122,6 +130,49 @@ class LoginViewModel : ViewModel() {
                 _showDangerousLocationModal.value = false to null
                 viewModelScope.launch {
                     _loginResultEvent.emit(LoginResultEvent.NavigateToLanding)
+                }
+            }
+
+            LoginEvent.ShowDisplayOverAppModal -> {
+                Log.d("LoginViewModel", "Showing display over app modal")
+                _showDisplayOverAppModal.value = true to null
+            }
+
+            LoginEvent.DismissDisplayOverAppModal -> {
+                Log.d("LoginViewModel", "Dismissing display over app modal")
+                _showDisplayOverAppModal.value = false to null
+            }
+
+            LoginEvent.OpenDisplayOverAppSettings -> {
+                Log.d("LoginViewModel", "Opening display over app settings")
+                _showDisplayOverAppModal.value = false to null
+                viewModelScope.launch {
+                    _loginResultEvent.emit(LoginResultEvent.OpenDisplayOverAppSettings)
+                }
+            }
+
+            is LoginEvent.StoreTokenForVerification -> {
+                Log.d("LoginViewModel", "Storing token for verification: ${event.token}")
+                _loginState.update { currentState ->
+                    currentState.copy(token = event.token)
+                }
+            }
+
+            LoginEvent.ClearStoredToken -> {
+                Log.d("LoginViewModel", "Clearing stored token")
+                _loginState.update { currentState ->
+                    currentState.copy(token = null)
+                }
+            }
+
+            is LoginEvent.EmitNavigateToVerification -> {
+                Log.d("LoginViewModel", "Emitting NavigateToVerification event with token: ${event.token}")
+                viewModelScope.launch {
+                    _loginResultEvent.emit(LoginResultEvent.NavigateToVerification(event.token))
+                    // Clear the stored token after emitting the event
+                    _loginState.update { currentState ->
+                        currentState.copy(token = null)
+                    }
                 }
             }
         }
