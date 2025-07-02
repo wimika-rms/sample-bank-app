@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
@@ -33,7 +34,8 @@ fun QuickActionsCard(
     onUtilityClick: () -> Unit,
     onDebitCheckClick: () -> Unit,
     onClaimsClick: () -> Unit,
-    onTypingProfileClick: () -> Unit
+    onTypingProfileClick: () -> Unit,
+    enableMoneyGuard: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -87,6 +89,18 @@ fun QuickActionsCard(
                     modifier = Modifier.weight(1f)
                 )
             }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                QuickActionButton(
+                    text = "Enable MoneyGuard",
+                    icon = Icons.Default.Check,
+                    onClick = enableMoneyGuard,
+                    modifier = Modifier.weight(1f)
+                )
+            }
         }
     }
 }
@@ -125,7 +139,8 @@ private fun QuickActionsCardPreview() {
             onUtilityClick = {},
             onDebitCheckClick = {},
             onClaimsClick = {},
-            onTypingProfileClick = {}
+            onTypingProfileClick = {},
+            enableMoneyGuard = {}
         )
     }
 }

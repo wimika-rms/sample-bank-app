@@ -78,12 +78,12 @@ fun UtilityScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Show Enable MoneyGuard button if status is InActive or NoPolicyAppInstalled
-            if (moneyGuardStatus == MoneyGuardAppStatus.InActive || 
-                moneyGuardStatus == MoneyGuardAppStatus.NoPolicyAppInstalled) {
-                Button(onClick = onNavigateToOnboarding) {
-                    Text("Enable MoneyGuard")
-                }
-            }
+//            if (moneyGuardStatus == MoneyGuardAppStatus.InActive ||
+//                moneyGuardStatus == MoneyGuardAppStatus.NoPolicyAppInstalled) {
+//                Button(onClick = onNavigateToOnboarding) {
+//                    Text("Enable MoneyGuard")
+//                }
+//            }
 
             Button(onClick = { checkStatus() }) {
                 Text("Check MoneyGuard Status")

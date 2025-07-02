@@ -90,28 +90,6 @@ fun AccountDetailsCard() {
                 )
             }
 
-
-//            Row(
-//                modifier = Modifier
-//                    .align(Alignment.BottomStart)
-//                    .padding(start = 20.dp, bottom = 20.dp),
-//                horizontalArrangement = Arrangement.spacedBy(16.dp)
-//            ) {
-//                IconButton(onClick = { /* TODO: Show/hide balance */ }) {
-//                    Icon(
-//                        imageVector = Icons.Default.Visibility,
-//                        contentDescription = "Show Balance",
-//                        tint = androidx.compose.ui.graphics.Color.White
-//                    )
-//                }
-//                androidx.compose.material3.IconButton(onClick = { /* TODO: Share account */ }) {
-//                    androidx.compose.material3.Icon(
-//                        imageVector = androidx.compose.material.icons.Icons.Default.Share,
-//                        contentDescription = "Share Account",
-//                        tint = androidx.compose.ui.graphics.Color.White
-//                    )
-//                }
-//            }
         }
     }
 }

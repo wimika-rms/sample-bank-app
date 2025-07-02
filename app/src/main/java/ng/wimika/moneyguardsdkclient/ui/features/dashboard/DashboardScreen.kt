@@ -200,7 +200,8 @@ fun DashboardScreen(
                     }
                 },
                 onClaimsClick = onClaimClick,
-                onTypingProfileClick = onTypingProfileClick
+                onTypingProfileClick = onTypingProfileClick,
+                enableMoneyGuard = onEnableMoneyGuard
             )
         }
     }
