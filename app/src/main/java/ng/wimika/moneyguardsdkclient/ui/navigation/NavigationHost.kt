@@ -127,7 +127,8 @@ fun NavigationHost(
                         navController.navigate(Routes.CHECK_DEBIT)
                     },
                     onEnableMoneyGuard = {
-                        navController.navigate(Routes.MONEY_GUARD)
+                        navController.navigate(Routes.ONBOARDING_INFO)
+                        //navController.navigate(Routes.MONEY_GUARD)
                     },
                     onClaimClick = {
                         navController.navigate(Routes.CLAIM)
